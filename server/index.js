@@ -84,6 +84,11 @@ io.on('connection', (socket) => {
       socket.to(roomId).emit('clear-board');
     });
 
+    // Reactions
+    socket.on('reaction', ({ roomId, userId, emoji }) => {
+      io.to(roomId).emit('reaction', { userId, emoji });
+    });
+
     socket.on('disconnect', () => {
       console.log(`User disconnected: ${socket.id}`);
       if (rooms[roomId] && rooms[roomId][socket.id]) {

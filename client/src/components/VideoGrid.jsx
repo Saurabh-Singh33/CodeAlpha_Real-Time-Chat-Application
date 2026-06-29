@@ -2,18 +2,78 @@ import React, { useEffect, useRef, useState, useContext } from 'react';
 import { SocketContext } from '../context/SocketContext';
 import { AuthContext } from '../context/AuthContext';
 
-export default function VideoGrid({ localStream, roomId }) {
+export default function VideoGrid({ localStream, roomId, isScreenSharing }) {
   const { socket } = useContext(SocketContext);
   const { user } = useContext(AuthContext);
   const [peers, setPeers] = useState({}); // { socketId: { stream, username } }
   const peersRef = useRef({});
   const localVideoRef = useRef();
+  const [reactions, setReactions] = useState({}); // { socketId: { emoji, id } }
 
   useEffect(() => {
     if (localVideoRef.current && localStream) {
       localVideoRef.current.srcObject = localStream;
     }
   }, [localStream]);
+
+  // Handle track switching for screen share
+  useEffect(() => {
+    const handleSwitchTrack = (e) => {
+      const newTrack = e.detail.track;
+      
+      // Update peers
+      Object.values(peersRef.current).forEach(pc => {
+        const senders = pc.getSenders();
+        const sender = senders.find(s => s.track && s.track.kind === 'video');
+        if (sender) {
+          sender.replaceTrack(newTrack);
+        }
+      });
+      
+      // Update local video element
+      if (localVideoRef.current) {
+        if (newTrack.kind === 'video') {
+           const tracks = [newTrack];
+           if (localStream) {
+             const audioTrack = localStream.getAudioTracks()[0];
+             if (audioTrack) tracks.push(audioTrack);
+           }
+           localVideoRef.current.srcObject = new MediaStream(tracks);
+        }
+      }
+    };
+    
+    window.addEventListener('switch-track', handleSwitchTrack);
+    return () => window.removeEventListener('switch-track', handleSwitchTrack);
+  }, [localStream]);
+
+  // Handle reactions
+  useEffect(() => {
+    if (!socket) return;
+    
+    const handleReaction = ({ userId, emoji }) => {
+      const reactionId = Date.now();
+      setReactions(prev => ({
+        ...prev,
+        [userId]: { emoji, id: reactionId }
+      }));
+      
+      setTimeout(() => {
+        setReactions(prev => {
+          if (prev[userId]?.id === reactionId) {
+            const next = { ...prev };
+            delete next[userId];
+            return next;
+          }
+          return prev;
+        });
+      }, 2000);
+    };
+
+    socket.on('reaction', handleReaction);
+    return () => socket.off('reaction', handleReaction);
+  }, [socket]);
+
 
   useEffect(() => {
     if (!socket || !localStream) return;
@@ -120,18 +180,28 @@ export default function VideoGrid({ localStream, roomId }) {
   return (
     <div className="video-grid">
       <div className="video-container">
-        <video ref={localVideoRef} autoPlay playsInline muted />
+        <video ref={localVideoRef} autoPlay playsInline muted style={{ objectFit: isScreenSharing ? 'contain' : 'cover' }} />
         <div className="video-label">{user?.username} (You)</div>
+        {reactions[socket?.id] && (
+          <div className="reaction-overlay" key={reactions[socket.id].id}>
+            {reactions[socket.id].emoji}
+          </div>
+        )}
       </div>
       
       {Object.entries(peers).map(([socketId, peerData]) => (
-        <RemoteVideo key={socketId} stream={peerData.stream} username={peerData.username} />
+        <RemoteVideo 
+          key={socketId} 
+          stream={peerData.stream} 
+          username={peerData.username} 
+          reaction={reactions[socketId]}
+        />
       ))}
     </div>
   );
 }
 
-function RemoteVideo({ stream, username }) {
+function RemoteVideo({ stream, username, reaction }) {
   const videoRef = useRef();
 
   useEffect(() => {
@@ -144,6 +214,11 @@ function RemoteVideo({ stream, username }) {
     <div className="video-container">
       <video ref={videoRef} autoPlay playsInline />
       <div className="video-label">{username}</div>
+      {reaction && (
+        <div className="reaction-overlay" key={reaction.id}>
+          {reaction.emoji}
+        </div>
+      )}
     </div>
   );
 }

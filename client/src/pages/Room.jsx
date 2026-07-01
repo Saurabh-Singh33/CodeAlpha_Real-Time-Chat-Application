@@ -5,7 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 import VideoGrid from '../components/VideoGrid';
 import Chat from '../components/Chat';
 import Whiteboard from '../components/Whiteboard';
-import { Monitor, MonitorUp, Video, VideoOff, Mic, MicOff, MessageSquare, PenTool, LogOut, Circle, Smile, X, StopCircle } from 'lucide-react';
+import { Monitor, MonitorUp, Video, VideoOff, Mic, MicOff, MessageSquare, PenTool, LogOut, Circle, Smile, X, StopCircle, Play, Activity, Users, UserPlus, Settings, Layout } from 'lucide-react';
 
 export default function Room() {
   const { roomId } = useParams();
@@ -160,75 +160,98 @@ export default function Room() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       <div className="room-container">
         <div className="main-stage">
+          <div className="top-bar">
+            <div className="room-title">Overview of new real estate proposals</div>
+            <div className="live-badge">
+              <div className="live-dot"></div> Live
+            </div>
+          </div>
+
           {activeTab === 'video' ? (
             <VideoGrid localStream={stream} roomId={roomId} isScreenSharing={isScreenSharing} />
           ) : (
             <Whiteboard roomId={roomId} />
           )}
           
-          <div className="controls-bar">
-            {/* Record */}
-            <div style={{ position: 'relative' }}>
-              <button className={`btn-icon ${isRecording ? 'btn-icon-danger' : ''}`} onClick={toggleRecording}>
-                {isRecording ? <StopCircle size={22} /> : <Circle size={22} />}
-                <span>Record</span>
+          <div className="controls-wrapper">
+            <div className="controls-bar">
+              {/* React */}
+              <div style={{ position: 'relative' }}>
+                {showReactions && (
+                  <div className="reaction-menu">
+                    <button className="reaction-btn" onClick={() => sendReaction('👍')}>👍</button>
+                    <button className="reaction-btn" onClick={() => sendReaction('❤️')}>❤️</button>
+                    <button className="reaction-btn" onClick={() => sendReaction('😂')}>😂</button>
+                    <button className="reaction-btn" onClick={() => sendReaction('👏')}>👏</button>
+                    <button className="reaction-btn" onClick={() => sendReaction('🎉')}>🎉</button>
+                  </div>
+                )}
+                <button className="btn-icon" onClick={() => setShowReactions(!showReactions)} title="React">
+                  <Smile size={24} />
+                </button>
+              </div>
+
+              {/* Mic */}
+              <button className={`btn-icon ${isAudioMuted ? 'btn-icon-danger' : ''}`} onClick={toggleAudio} title="Toggle Mic">
+                {isAudioMuted ? <MicOff size={24} /> : <Mic size={24} />}
+              </button>
+              
+              {/* Leave - Red circle in middle */}
+              <button className="btn-icon leave-btn" onClick={leaveRoom} style={{ width: '64px', height: '64px', borderRadius: '50%' }} title="Leave Room">
+                <StopCircle size={28} />
+              </button>
+
+              {/* Camera */}
+              <button className={`btn-icon ${isVideoMuted ? 'btn-icon-danger' : ''}`} onClick={toggleVideo} title="Toggle Camera">
+                {isVideoMuted ? <VideoOff size={24} /> : <Video size={24} />}
+              </button>
+
+              {/* Share */}
+              <button className={`btn-icon ${isScreenSharing ? 'active' : ''}`} onClick={toggleScreenShare} title="Share Screen">
+                {isScreenSharing ? <Monitor size={24} /> : <MonitorUp size={24} />}
               </button>
             </div>
+          </div>
 
-            {/* React */}
-            <div style={{ position: 'relative' }}>
-              {showReactions && (
-                <div className="reaction-menu">
-                  <button className="reaction-btn" onClick={() => sendReaction('👍')}>👍</button>
-                  <button className="reaction-btn" onClick={() => sendReaction('❤️')}>❤️</button>
-                  <button className="reaction-btn" onClick={() => sendReaction('😂')}>😂</button>
-                  <button className="reaction-btn" onClick={() => sendReaction('👏')}>👏</button>
-                  <button className="reaction-btn" onClick={() => sendReaction('🎉')}>🎉</button>
-                </div>
-              )}
-              <button className="btn-icon" onClick={() => setShowReactions(!showReactions)}>
-                <Smile size={22} />
-                <span>React</span>
-              </button>
+          {/* Bottom Features Bar */}
+          <div className="bottom-features-bar">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', color: 'var(--text-secondary)' }}>
+              <Play size={20} />
+              <Activity size={24} />
+              <span style={{ fontSize: '0.8rem' }}>01:36</span>
             </div>
-
-            {/* Mic */}
-            <button className={`btn-icon ${isAudioMuted ? 'btn-icon-danger' : ''}`} onClick={toggleAudio}>
-              {isAudioMuted ? <MicOff size={22} /> : <Mic size={22} />}
-              <span>Mic</span>
-            </button>
             
-            {/* Camera */}
-            <button className={`btn-icon ${isVideoMuted ? 'btn-icon-danger' : ''}`} onClick={toggleVideo}>
-              {isVideoMuted ? <VideoOff size={22} /> : <Video size={22} />}
-              <span>Camera</span>
+            <button className="feature-btn" onClick={() => setActiveTab(activeTab === 'video' ? 'whiteboard' : 'video')}>
+              <Layout size={18} />
+              {activeTab === 'video' ? 'Open Whiteboard' : 'Back to Video'}
             </button>
 
-            {/* Share */}
-            <button className={`btn-icon ${isScreenSharing ? 'active' : ''}`} onClick={toggleScreenShare}>
-              {isScreenSharing ? <Monitor size={22} /> : <MonitorUp size={22} />}
-              <span>Share</span>
-            </button>
-
-            {/* Leave */}
-            <button className="btn-icon leave-btn" onClick={leaveRoom}>
-              <X size={22} />
-              <span>Leave</span>
-            </button>
+            <div className="feature-btn">
+              <Users size={18} />
+              Invited to the call <span style={{ opacity: 0.5, marginLeft: '4px' }}>34+</span>
+            </div>
+            
+            <div className="feature-btn">
+              <UserPlus size={18} />
+              Add user to the call
+            </div>
+            
+            <div style={{ color: 'var(--text-secondary)', cursor: 'pointer', marginLeft: 'auto' }}>
+              <Settings size={20} />
+            </div>
           </div>
         </div>
 
-        <div className="side-panel glass-panel">
-          <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)' }}>
-            <button 
-              style={{ flex: 1, padding: '1rem', background: sidePanel === 'chat' ? 'rgba(255,255,255,0.05)' : 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}
-              onClick={() => setSidePanel('chat')}
-            >
-              Chat & Files
+        <div className="side-panel dark-panel">
+          <div className="side-panel-header">
+            <span className="side-panel-title">Group chat</span>
+            <button className="btn-icon" style={{ width: '36px', height: '36px', background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none' }} onClick={() => setSidePanel(sidePanel === 'chat' ? 'users' : 'chat')}>
+              {sidePanel === 'chat' ? <Users size={16} /> : <MessageSquare size={16} />}
             </button>
           </div>
           
           {sidePanel === 'chat' && <Chat roomId={roomId} />}
+          {sidePanel === 'users' && <div style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Users list placeholder</div>}
         </div>
       </div>
     </div>

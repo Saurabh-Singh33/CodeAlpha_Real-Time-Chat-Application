@@ -28,6 +28,10 @@ io.on('connection', (socket) => {
   socket.on('join-room', (roomId, username) => {
     socket.join(roomId);
     
+    // Store user info on the socket for other events
+    socket.roomId = roomId;
+    socket.username = username;
+    
     if (!rooms[roomId]) {
       rooms[roomId] = {};
     }
@@ -41,66 +45,79 @@ io.on('connection', (socket) => {
     socket.emit('room-users', otherUsers);
 
     console.log(`${username} (${socket.id}) joined room ${roomId}`);
+  });
 
-    // WebRTC Signaling
-    socket.on('offer', (payload) => {
-      io.to(payload.target).emit('offer', {
-        caller: socket.id,
-        sdp: payload.sdp,
-        username
-      });
+  // WebRTC Signaling
+  socket.on('offer', (payload) => {
+    io.to(payload.target).emit('offer', {
+      caller: socket.id,
+      sdp: payload.sdp,
+      username: socket.username
     });
+  });
 
-    socket.on('answer', (payload) => {
-      io.to(payload.target).emit('answer', {
-        caller: socket.id,
-        sdp: payload.sdp
-      });
+  socket.on('answer', (payload) => {
+    io.to(payload.target).emit('answer', {
+      caller: socket.id,
+      sdp: payload.sdp
     });
+  });
 
-    socket.on('ice-candidate', (payload) => {
-      io.to(payload.target).emit('ice-candidate', {
-        caller: socket.id,
-        candidate: payload.candidate
-      });
+  socket.on('ice-candidate', (payload) => {
+    io.to(payload.target).emit('ice-candidate', {
+      caller: socket.id,
+      candidate: payload.candidate
     });
+  });
 
-    // Chat
-    socket.on('chat-message', (messageObj) => {
-      io.to(roomId).emit('chat-message', {
-        sender: username,
-        senderId: socket.id,
-        ...messageObj,
-        timestamp: new Date().toISOString()
-      });
-    });
-
-    // Whiteboard
-    socket.on('draw', (drawData) => {
-      socket.to(roomId).emit('draw', drawData);
-    });
+  // Chat
+  socket.on('chat-message', (messageObj) => {
+    const targetRoomId = messageObj.roomId || socket.roomId;
+    if (!targetRoomId) return;
     
-    socket.on('clear-board', () => {
-      socket.to(roomId).emit('clear-board');
+    io.to(targetRoomId).emit('chat-message', {
+      sender: socket.username,
+      senderId: socket.id,
+      ...messageObj,
+      timestamp: new Date().toISOString()
     });
+  });
 
-    // Reactions
-    socket.on('reaction', ({ roomId, userId, emoji }) => {
-      io.to(roomId).emit('reaction', { userId, emoji });
-    });
+  // Whiteboard
+  socket.on('draw', (drawData) => {
+    const targetRoomId = drawData.roomId || socket.roomId;
+    if (targetRoomId) {
+      socket.to(targetRoomId).emit('draw', drawData);
+    }
+  });
+  
+  socket.on('clear-board', (roomId) => {
+    const targetRoomId = roomId || socket.roomId;
+    if (targetRoomId) {
+      socket.to(targetRoomId).emit('clear-board');
+    }
+  });
 
-    socket.on('disconnect', () => {
-      console.log(`User disconnected: ${socket.id}`);
-      if (rooms[roomId] && rooms[roomId][socket.id]) {
-        delete rooms[roomId][socket.id];
-        socket.to(roomId).emit('user-disconnected', socket.id);
-        
-        // Clean up empty rooms
-        if (Object.keys(rooms[roomId]).length === 0) {
-          delete rooms[roomId];
-        }
+  // Reactions
+  socket.on('reaction', ({ roomId, userId, emoji }) => {
+    const targetRoomId = roomId || socket.roomId;
+    if (targetRoomId) {
+      io.to(targetRoomId).emit('reaction', { userId, emoji });
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`User disconnected: ${socket.id}`);
+    const roomId = socket.roomId;
+    if (roomId && rooms[roomId] && rooms[roomId][socket.id]) {
+      delete rooms[roomId][socket.id];
+      socket.to(roomId).emit('user-disconnected', socket.id);
+      
+      // Clean up empty rooms
+      if (Object.keys(rooms[roomId]).length === 0) {
+        delete rooms[roomId];
       }
-    });
+    }
   });
 });
 

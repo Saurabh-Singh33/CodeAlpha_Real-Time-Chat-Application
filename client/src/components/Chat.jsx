@@ -8,7 +8,7 @@ export default function Chat({ roomId }) {
   const [input, setInput] = useState('');
   const { socket } = useContext(SocketContext);
   const { user } = useContext(AuthContext);
-  const messagesEndRef = useRef(null);
+  const chatContainerRef = useRef(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -26,7 +26,9 @@ export default function Chat({ roomId }) {
   }, [socket]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
   }, [messages]);
 
   const sendMessage = (e) => {
@@ -65,7 +67,7 @@ export default function Chat({ roomId }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div className="chat-messages">
+      <div className="chat-messages" ref={chatContainerRef}>
         {messages.map((msg, index) => {
           const isSelf = msg.senderId === socket.id;
           return (
@@ -91,7 +93,6 @@ export default function Chat({ roomId }) {
             </div>
           );
         })}
-        <div ref={messagesEndRef} />
       </div>
 
       <form onSubmit={sendMessage} className="chat-input">

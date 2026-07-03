@@ -527,3 +527,9 @@ a:hover {
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-color);
 }
+
+@media (max-width: 768px) {
+  .hide-on-mobile {
+    display: none !important;
+  }
+}

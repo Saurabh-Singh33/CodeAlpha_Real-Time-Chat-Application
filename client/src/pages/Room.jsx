@@ -173,8 +173,17 @@ export default function Room() {
             <Whiteboard roomId={roomId} />
           )}
           
-          <div className="controls-wrapper">
-            <div className="controls-bar">
+          {/* Bottom Features Bar */}
+          <div className="bottom-features-bar" style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+            {/* Left Section */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', color: 'var(--text-secondary)', flex: 1 }}>
+              <Play size={20} />
+              <Activity size={24} />
+              <span style={{ fontSize: '0.8rem' }}>01:36</span>
+            </div>
+
+            {/* Center Controls */}
+            <div className="controls-bar" style={{ display: 'flex', gap: '1.25rem', margin: '0 auto', boxShadow: 'none', border: 'none', background: 'transparent', padding: 0 }}>
               {/* React */}
               <div style={{ position: 'relative' }}>
                 {showReactions && (
@@ -211,33 +220,26 @@ export default function Room() {
                 {isScreenSharing ? <Monitor size={24} /> : <MonitorUp size={24} />}
               </button>
             </div>
-          </div>
+            
+            {/* Right Section */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flex: 1, justifyContent: 'flex-end' }}>
+              <button className="feature-btn" onClick={() => setActiveTab(activeTab === 'video' ? 'whiteboard' : 'video')}>
+                <Layout size={18} />
+                <span className="hide-on-mobile">{activeTab === 'video' ? 'Whiteboard' : 'Video'}</span>
+              </button>
 
-          {/* Bottom Features Bar */}
-          <div className="bottom-features-bar">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', color: 'var(--text-secondary)' }}>
-              <Play size={20} />
-              <Activity size={24} />
-              <span style={{ fontSize: '0.8rem' }}>01:36</span>
-            </div>
-            
-            <button className="feature-btn" onClick={() => setActiveTab(activeTab === 'video' ? 'whiteboard' : 'video')}>
-              <Layout size={18} />
-              {activeTab === 'video' ? 'Open Whiteboard' : 'Back to Video'}
-            </button>
-
-            <div className="feature-btn">
-              <Users size={18} />
-              Invited to the call <span style={{ opacity: 0.5, marginLeft: '4px' }}>34+</span>
-            </div>
-            
-            <div className="feature-btn">
-              <UserPlus size={18} />
-              Add user to the call
-            </div>
-            
-            <div style={{ color: 'var(--text-secondary)', cursor: 'pointer', marginLeft: 'auto' }}>
-              <Settings size={20} />
+              <div className="feature-btn hide-on-mobile">
+                <Users size={18} />
+                <span style={{ opacity: 0.5, marginLeft: '4px' }}>34+</span>
+              </div>
+              
+              <div className="feature-btn hide-on-mobile">
+                <UserPlus size={18} />
+              </div>
+              
+              <div style={{ color: 'var(--text-secondary)', cursor: 'pointer', marginLeft: '10px' }}>
+                <Settings size={20} />
+              </div>
             </div>
           </div>
         </div>

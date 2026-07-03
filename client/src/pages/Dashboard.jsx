@@ -39,7 +39,7 @@ export default function Dashboard() {
         <div className="glass-panel" style={{ padding: '3rem', width: '100%', maxWidth: '500px', textAlign: 'center' }}>
           <h2 style={{ marginBottom: '2rem' }}>Start a Meeting</h2>
           
-          <button className="btn btn-primary" onClick={handleCreate} style={{ width: '100%', marginBottom: '2rem', padding: '1rem' }}>
+          <button className="btn" onClick={handleCreate} style={{ width: '100%', marginBottom: '2rem', padding: '1rem', background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', color: 'white', border: 'none', boxShadow: '0 4px 15px rgba(99, 102, 241, 0.4)', fontWeight: 'bold', fontSize: '1.1rem' }}>
             <Video size={20} />
             Create New Room
           </button>
@@ -58,10 +58,10 @@ export default function Dashboard() {
               placeholder="Enter Room Code"
               value={roomId}
               onChange={e => setRoomId(e.target.value)}
-              style={{ flex: 1 }}
+              style={{ flex: 1, border: '2px solid rgba(139, 92, 246, 0.3)', padding: '0.75rem 1rem', fontSize: '1rem' }}
               required
             />
-            <button type="submit" className="btn" style={{ background: 'var(--text-primary)', color: 'var(--bg-dark)' }}>
+            <button type="submit" className="btn" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', border: 'none', boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)', fontWeight: 'bold', padding: '0 1.5rem' }}>
               Join
             </button>
           </form>

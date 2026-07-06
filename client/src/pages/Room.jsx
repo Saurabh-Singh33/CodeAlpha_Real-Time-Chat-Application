@@ -5,7 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 import VideoGrid from '../components/VideoGrid';
 import Chat from '../components/Chat';
 import Whiteboard from '../components/Whiteboard';
-import { Monitor, MonitorUp, Video, VideoOff, Mic, MicOff, MessageSquare, PenTool, LogOut, Circle, Smile, X, StopCircle, Play, Activity, Users, UserPlus, Settings, Layout } from 'lucide-react';
+import { Monitor, MonitorUp, Video, VideoOff, Mic, MicOff, MessageSquare, PenTool, LogOut, Circle, Smile, X, StopCircle, Play, Activity, Users, UserPlus, Settings, Layout, Copy, Check } from 'lucide-react';
 
 export default function Room() {
   const { roomId } = useParams();
@@ -23,6 +23,12 @@ export default function Room() {
   const [isRecording, setIsRecording] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
+  
+  const [usersInRoom, setUsersInRoom] = useState([]);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteInput, setInviteInput] = useState('');
+  const [inviteStatus, setInviteStatus] = useState('');
+  const [linkCopied, setLinkCopied] = useState(false);
   const mediaRecorderRef = useRef(null);
   const recordedChunksRef = useRef([]);
   
@@ -41,10 +47,30 @@ export default function Room() {
         socket.emit('join-room', roomId, user.username);
       });
       
+    socket.on('room-users', (users) => {
+      setUsersInRoom(users);
+    });
+
+    socket.on('user-connected', (newUser) => {
+      setUsersInRoom(prev => {
+        if (!prev.find(u => u.id === newUser.userId)) {
+          return [...prev, { id: newUser.userId, username: newUser.username }];
+        }
+        return prev;
+      });
+    });
+
+    socket.on('user-disconnected', (userId) => {
+      setUsersInRoom(prev => prev.filter(u => u.id !== userId));
+    });
+
     return () => {
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
+      socket.off('room-users');
+      socket.off('user-connected');
+      socket.off('user-disconnected');
     };
   }, [roomId, socket, user]);
 
@@ -156,14 +182,41 @@ export default function Room() {
     navigate('/');
   };
 
+  const copyRoomLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
+
+  const handleSendInvite = (e) => {
+    e.preventDefault();
+    if (!inviteInput.trim()) return;
+    
+    setInviteStatus('sending');
+    setTimeout(() => {
+      setInviteStatus('sent');
+      setTimeout(() => {
+        setShowInviteModal(false);
+        setInviteStatus('');
+        setInviteInput('');
+      }, 2000);
+    }, 1500);
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       <div className="room-container">
         <div className="main-stage">
           <div className="top-bar">
-            <div className="room-title">Overview of new real estate proposals</div>
-            <div className="live-badge">
-              <div className="live-dot"></div> Live
+            <div className="room-title">Meeting Room: {roomId}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <button className="btn" onClick={copyRoomLink} style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', padding: '0.4rem 0.8rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                {linkCopied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+                {linkCopied ? 'Copied' : 'Copy Link'}
+              </button>
+              <div className="live-badge">
+                <div className="live-dot"></div> Live
+              </div>
             </div>
           </div>
 
@@ -228,12 +281,16 @@ export default function Room() {
                 <span className="hide-on-mobile">{activeTab === 'video' ? 'Whiteboard' : 'Video'}</span>
               </button>
 
-              <div className="feature-btn hide-on-mobile">
+              <div 
+                className={`feature-btn hide-on-mobile ${sidePanel === 'users' ? 'active' : ''}`} 
+                onClick={() => setSidePanel(sidePanel === 'users' ? 'chat' : 'users')}
+                style={{ cursor: 'pointer' }}
+              >
                 <Users size={18} />
-                <span style={{ opacity: 0.5, marginLeft: '4px' }}>34+</span>
+                <span style={{ opacity: 0.8, marginLeft: '4px' }}>{usersInRoom.length + 1}</span>
               </div>
               
-              <div className="feature-btn hide-on-mobile">
+              <div className="feature-btn hide-on-mobile" onClick={() => setShowInviteModal(true)} style={{ cursor: 'pointer' }}>
                 <UserPlus size={18} />
               </div>
               
@@ -253,9 +310,87 @@ export default function Room() {
           </div>
           
           {sidePanel === 'chat' && <Chat roomId={roomId} />}
-          {sidePanel === 'users' && <div style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Users list placeholder</div>}
+          {sidePanel === 'users' && (
+            <div style={{ padding: '1rem', color: 'white', display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto', flex: 1 }}>
+              <div style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                  {user?.username?.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{user?.username} (You)</div>
+                </div>
+              </div>
+              
+              {usersInRoom.map(u => (
+                <div key={u.id} style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                    {u.username?.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{u.username}</div>
+                  </div>
+                </div>
+              ))}
+              
+              {usersInRoom.length === 0 && (
+                <div style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: '2rem', fontSize: '0.9rem' }}>
+                  You are the only one here.
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
+      
+      {/* Invite Modal */}
+      {showInviteModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div className="glass-panel" style={{ width: '90%', maxWidth: '400px', padding: '2rem', position: 'relative' }}>
+            <button 
+              onClick={() => setShowInviteModal(false)} 
+              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
+            >
+              <X size={20} />
+            </button>
+            <h3 style={{ marginTop: 0, marginBottom: '1.5rem', color: 'white' }}>Invite someone</h3>
+            
+            <form onSubmit={handleSendInvite}>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                  Email or Phone Number
+                </label>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  placeholder="e.g. user@gmail.com or +1 234..."
+                  value={inviteInput}
+                  onChange={e => setInviteInput(e.target.value)}
+                  style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px' }}
+                  required
+                />
+              </div>
+              
+              <button 
+                type="submit" 
+                className="btn" 
+                disabled={inviteStatus !== ''}
+                style={{ 
+                  width: '100%', 
+                  padding: '0.75rem', 
+                  background: inviteStatus === 'sent' ? '#10b981' : 'linear-gradient(135deg, #6366f1, #8b5cf6)', 
+                  color: 'white', 
+                  border: 'none', 
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  cursor: inviteStatus !== '' ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {inviteStatus === 'sending' ? 'Sending...' : inviteStatus === 'sent' ? 'Invite Sent!' : 'Send Invite'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

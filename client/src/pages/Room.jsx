@@ -32,8 +32,28 @@ export default function Room() {
   const mediaRecorderRef = useRef(null);
   const recordedChunksRef = useRef([]);
   
+  const [isValidating, setIsValidating] = useState(true);
+  const [roomError, setRoomError] = useState('');
+  
   useEffect(() => {
-    if (!socket || !user) return;
+    const validateRoom = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/rooms/${roomId}`);
+        const data = await res.json();
+        if (!data.exists) {
+          setRoomError('Meeting not found.');
+        }
+      } catch (err) {
+        setRoomError('Failed to verify meeting. Please check your connection.');
+      } finally {
+        setIsValidating(false);
+      }
+    };
+    validateRoom();
+  }, [roomId]);
+
+  useEffect(() => {
+    if (!socket || !user || isValidating || roomError) return;
     
     // Request media access
     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
@@ -202,6 +222,31 @@ export default function Room() {
       }, 2000);
     }, 1500);
   };
+
+  if (isValidating) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'white', background: 'var(--bg-dark)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+          <div className="live-dot" style={{ width: '20px', height: '20px' }}></div>
+          <p>Getting ready...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (roomError) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'white', background: 'var(--bg-dark)' }}>
+        <div className="glass-panel" style={{ padding: '3rem', borderRadius: '12px', textAlign: 'center', maxWidth: '400px', width: '90%' }}>
+          <h2 style={{ marginBottom: '1rem', color: '#ef4444' }}>{roomError}</h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>The meeting link you used is invalid or the meeting has ended.</p>
+          <button className="btn" onClick={() => navigate('/')} style={{ background: '#6366f1', color: 'white', border: 'none', padding: '0.8rem 1.5rem', borderRadius: '8px', fontWeight: 'bold' }}>
+            Return to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>

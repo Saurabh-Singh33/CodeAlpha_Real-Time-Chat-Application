@@ -10,8 +10,12 @@ const db = new sqlite3.Database(dbPath, (err) => {
     console.log('Connected to SQLite database.');
     db.run(`CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT ,
+      username TEXT UNIQUE,
       password TEXT
+    )`);
+    db.run(`CREATE TABLE IF NOT EXISTS rooms (
+      id TEXT PRIMARY KEY,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
   }
 });
@@ -37,8 +41,29 @@ const getUserByUsername = (username) => {
   });
 };
 
+const createRoom = (roomId) => {
+  return new Promise((resolve, reject) => {
+    db.run(`INSERT OR IGNORE INTO rooms (id) VALUES (?)`, [roomId], function(err) {
+      if (err) return reject(err);
+      resolve({ id: roomId });
+    });
+  });
+};
+
+const getRoom = (roomId) => {
+  return new Promise((resolve, reject) => {
+    db.get(`SELECT * FROM rooms WHERE id = ?`, [roomId], (err, row) => {
+      if (err) return reject(err);
+      resolve(row);
+    });
+  });
+};
+
 module.exports = {
   db,
   createUser,
-  getUserByUsername
+  getUserByUsername,
+  createRoom,
+  getRoom
 };
+

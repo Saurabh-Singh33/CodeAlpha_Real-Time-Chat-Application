@@ -2,7 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
-const authRoutes = require('./routes/auth');
+const { createUser, getUserByUsername, createRoom, getRoom } = require('./db');
 
 const app = express();
 app.use(cors());
@@ -11,23 +11,30 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRoutes);
 
-// Map of valid rooms that have been explicitly created
-const validRooms = new Set();
-
 // API to create a new room
-app.post('/api/rooms', (req, res) => {
+app.post('/api/rooms', async (req, res) => {
   const { roomId } = req.body;
   if (!roomId) return res.status(400).json({ error: 'Room ID is required' });
-  validRooms.add(roomId);
-  res.json({ success: true, roomId });
+  try {
+    await createRoom(roomId);
+    res.json({ success: true, roomId });
+  } catch (err) {
+    console.error('Error creating room:', err);
+    res.status(500).json({ error: 'Failed to create room' });
+  }
 });
 
 // API to verify if a room exists
-app.get('/api/rooms/:roomId', (req, res) => {
+app.get('/api/rooms/:roomId', async (req, res) => {
   const { roomId } = req.params;
-  if (validRooms.has(roomId)) {
-    res.json({ exists: true });
-  } else {
+  try {
+    const room = await getRoom(roomId);
+    if (room || (rooms[roomId] && Object.keys(rooms[roomId]).length > 0)) {
+      res.json({ exists: true });
+    } else {
+      res.json({ exists: false });
+    }
+  } catch (err) {
     res.json({ exists: false });
   }
 });
@@ -124,6 +131,18 @@ io.on('connection', (socket) => {
     const targetRoomId = roomId || socket.roomId;
     if (targetRoomId) {
       io.to(targetRoomId).emit('reaction', { userId, emoji });
+    }
+  });
+
+  // Media State changes (audio/video mute toggles)
+  socket.on('media-state', ({ isVideoMuted, isAudioMuted }) => {
+    const targetRoomId = socket.roomId;
+    if (targetRoomId) {
+      socket.to(targetRoomId).emit('user-media-state', {
+        userId: socket.id,
+        isVideoMuted,
+        isAudioMuted
+      });
     }
   });
 

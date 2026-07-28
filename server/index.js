@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const authRoutes = require('./routes/auth');
 const { createUser, getUserByUsername, createRoom, getRoom } = require('./db');
 
 const app = express();

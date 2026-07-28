@@ -11,7 +11,8 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const res = await fetch('http://localhost:5000/api/auth/me', {
+          const serverUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : `${window.location.protocol}//${window.location.hostname}:5000`;
+          const res = await fetch(`${serverUrl}/api/auth/me`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           if (res.ok) {

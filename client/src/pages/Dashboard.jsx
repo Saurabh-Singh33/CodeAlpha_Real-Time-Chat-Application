@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Video, LogOut, Copy, Check, X } from 'lucide-react';
+import { Video, LogOut, Copy, Check, X, PlusCircle, Link, Shield, Users } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 export default function Dashboard() {
@@ -17,6 +17,12 @@ export default function Dashboard() {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
+  const getServerUrl = () => {
+    return window.location.hostname === 'localhost' 
+      ? 'http://localhost:5000' 
+      : `${window.location.protocol}//${window.location.hostname}:5000`;
+  };
+
   const handleJoin = async (e) => {
     if (e) e.preventDefault();
     setJoinError('');
@@ -24,26 +30,24 @@ export default function Dashboard() {
     if (!roomIdInput.trim()) return;
     
     setIsJoining(true);
-    // Extract ID if it's a full URL
     let parsedId = roomIdInput.trim();
     if (parsedId.includes('/room/')) {
       parsedId = parsedId.split('/room/')[1];
     }
-    // Remove query params or hashes if any
     parsedId = parsedId.split('?')[0].split('#')[0];
 
     try {
-      const res = await fetch(`http://localhost:5000/api/rooms/${parsedId}`);
+      const res = await fetch(`${getServerUrl()}/api/rooms/${parsedId}`);
       const data = await res.json();
       
       if (data.exists) {
         navigate(`/room/${parsedId}`);
       } else {
-        setJoinError('Meeting not found.');
+        setJoinError('Meeting not found. Check the room ID and try again.');
       }
     } catch (err) {
       console.error(err);
-      setJoinError('Failed to verify meeting. Please try again.');
+      setJoinError('Failed to verify meeting. Please check server connection.');
     } finally {
       setIsJoining(false);
     }
@@ -53,7 +57,7 @@ export default function Dashboard() {
     setIsCreating(true);
     const newRoomId = uuidv4();
     try {
-      const res = await fetch('http://localhost:5000/api/rooms', {
+      const res = await fetch(`${getServerUrl()}/api/rooms`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -90,96 +94,153 @@ export default function Dashboard() {
   };
 
   return (
-    <div>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <header className="app-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600', fontSize: '1.25rem' }}>
-          <Video color="var(--accent-primary)" />
-          <span>RealComm</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: '700', fontSize: '1.35rem' }}>
+          <div style={{ background: 'linear-gradient(135deg, var(--accent-indigo), var(--accent-violet))', padding: '8px', borderRadius: '12px', display: 'flex' }}>
+            <Video color="white" size={20} />
+          </div>
+          <span style={{ background: 'linear-gradient(135deg, #fff, #cbd5e1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            RealComm
+          </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span>Welcome, {user.username}</span>
-          <button className="btn btn-icon" onClick={logout} title="Logout">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-indigo), var(--accent-cyan))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.9rem' }}>
+              {user?.username?.charAt(0).toUpperCase()}
+            </div>
+            <span style={{ fontWeight: '500', color: 'var(--text-secondary)' }}>{user?.username}</span>
+          </div>
+          <button className="btn-icon" onClick={logout} title="Logout" style={{ width: '40px', height: '40px' }}>
             <LogOut size={18} />
           </button>
         </div>
       </header>
 
-      <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '4rem' }}>
-        <div className="glass-panel" style={{ padding: '3rem', width: '100%', maxWidth: '500px', textAlign: 'center' }}>
-          <h2 style={{ marginBottom: '2rem' }}>Start a Meeting</h2>
-          
+      <div className="dashboard-hero">
+        <h1 className="dashboard-title">Premium Video Meetings for Everyone</h1>
+        <p className="dashboard-desc">
+          Connect, collaborate, and share with real-time video, interactive whiteboard, instant chat, and crystal clear screen sharing.
+        </p>
+
+        <div className="glass-panel" style={{ padding: '2.5rem', width: '100%', maxWidth: '520px', margin: '0 auto' }}>
           <button 
-            className="btn" 
+            className="btn btn-primary" 
             onClick={handleCreate} 
             disabled={isCreating}
-            style={{ width: '100%', marginBottom: '2rem', padding: '1rem', background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', color: 'white', border: 'none', boxShadow: '0 4px 15px rgba(99, 102, 241, 0.4)', fontWeight: 'bold', fontSize: '1.1rem', cursor: isCreating ? 'not-allowed' : 'pointer', opacity: isCreating ? 0.7 : 1 }}
+            style={{ width: '100%', padding: '1rem', fontSize: '1.05rem', marginBottom: '1.75rem' }}
           >
-            <Video size={20} />
-            {isCreating ? 'Creating...' : 'Create New Room'}
+            <PlusCircle size={22} />
+            {isCreating ? 'Generating Room...' : 'New Instant Meeting'}
           </button>
           
-          <div style={{ position: 'relative', marginBottom: '2rem' }}>
-            <hr style={{ borderColor: 'var(--border-color)' }} />
-            <span style={{ position: 'absolute', top: '-10px', left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-panel)', padding: '0 10px', color: 'var(--text-secondary)' }}>
-              or
+          <div style={{ position: 'relative', marginBottom: '1.75rem' }}>
+            <div style={{ height: '1px', background: 'var(--border-glass-strong)' }}></div>
+            <span style={{ 
+              position: 'absolute', 
+              top: '50%', 
+              left: '50%', 
+              transform: 'translate(-50%, -50%)', 
+              background: '#0d121d', 
+              padding: '0 12px', 
+              color: 'var(--text-muted)',
+              fontSize: '0.85rem',
+              fontWeight: '600',
+              textTransform: 'uppercase'
+            }}>
+              or join existing
             </span>
           </div>
           
-          <form onSubmit={handleJoin} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <input 
-                type="text" 
-                className="form-control" 
-                placeholder="Enter Meeting ID or Link"
-                value={roomIdInput}
-                onChange={e => setRoomIdInput(e.target.value)}
-                style={{ flex: 1, border: joinError ? '2px solid #ef4444' : '2px solid rgba(139, 92, 246, 0.3)', padding: '0.75rem 1rem', fontSize: '1rem' }}
-                required
-              />
-              <button type="submit" className="btn" disabled={isJoining} style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', border: 'none', boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)', fontWeight: 'bold', padding: '0 1.5rem', opacity: isJoining ? 0.7 : 1 }}>
-                {isJoining ? 'Joining...' : 'Join'}
+          <form onSubmit={handleJoin} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', gap: '0.6rem' }}>
+              <div style={{ position: 'relative', flex: 1 }}>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  placeholder="Enter Meeting ID or Link"
+                  value={roomIdInput}
+                  onChange={e => setRoomIdInput(e.target.value)}
+                  style={{ width: '100%', paddingLeft: '2.5rem' }}
+                  required
+                />
+                <Link size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              </div>
+              <button type="submit" className="btn btn-secondary" disabled={isJoining} style={{ padding: '0 1.5rem', fontWeight: '600' }}>
+                {isJoining ? 'Verifying...' : 'Join'}
               </button>
             </div>
-            {joinError && <div style={{ color: '#ef4444', fontSize: '0.9rem', textAlign: 'left', marginTop: '0.25rem' }}>{joinError}</div>}
+            {joinError && <div style={{ color: 'var(--accent-rose)', fontSize: '0.85rem', textAlign: 'left', marginTop: '0.2rem' }}>{joinError}</div>}
           </form>
+        </div>
+
+        {/* Feature Cards Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', maxWidth: '850px', width: '100%', marginTop: '3.5rem' }}>
+          <div className="glass-panel" style={{ padding: '1.5rem', textAlign: 'left' }}>
+            <div style={{ background: 'rgba(99, 102, 241, 0.15)', padding: '10px', borderRadius: '12px', width: 'fit-content', color: 'var(--accent-indigo)', marginBottom: '1rem' }}>
+              <Video size={24} />
+            </div>
+            <h3 style={{ fontSize: '1.1rem', marginBottom: '0.4rem' }}>HD Video & Audio</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: '1.5' }}>Low latency WebRTC peer-to-peer audio and video streaming.</p>
+          </div>
+
+          <div className="glass-panel" style={{ padding: '1.5rem', textAlign: 'left' }}>
+            <div style={{ background: 'rgba(16, 185, 129, 0.15)', padding: '10px', borderRadius: '12px', width: 'fit-content', color: 'var(--accent-emerald)', marginBottom: '1rem' }}>
+              <Users size={24} />
+            </div>
+            <h3 style={{ fontSize: '1.1rem', marginBottom: '0.4rem' }}>Live Whiteboard</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: '1.5' }}>Interactive collaborative drawing board with brush colors and sizes.</p>
+          </div>
+
+          <div className="glass-panel" style={{ padding: '1.5rem', textAlign: 'left' }}>
+            <div style={{ background: 'rgba(6, 182, 212, 0.15)', padding: '10px', borderRadius: '12px', width: 'fit-content', color: 'var(--accent-cyan)', marginBottom: '1rem' }}>
+              <Shield size={24} />
+            </div>
+            <h3 style={{ fontSize: '1.1rem', marginBottom: '0.4rem' }}>Secure Rooms</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: '1.5' }}>Instant room creation with SQLite authentication and persistent tokens.</p>
+          </div>
         </div>
       </div>
       
       {/* Meeting Created Modal */}
       {showModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="glass-panel" style={{ width: '90%', maxWidth: '450px', padding: '2rem', position: 'relative' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '1rem' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '460px', padding: '2rem', position: 'relative' }}>
             <button 
               onClick={() => setShowModal(false)} 
-              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
+              style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'rgba(255,255,255,0.08)', border: 'none', color: 'var(--text-secondary)', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
             >
-              <X size={20} />
+              <X size={18} />
             </button>
             
-            <h3 style={{ marginTop: 0, marginBottom: '0.5rem', color: 'white', fontSize: '1.4rem' }}>Here's your joining info</h3>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-              Send this to people you want to meet with. Be sure to save it so you can use it later, too.
+            <div style={{ background: 'rgba(99, 102, 241, 0.15)', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-indigo)', marginBottom: '1rem' }}>
+              <Video size={24} />
+            </div>
+
+            <h3 style={{ margin: 0, marginBottom: '0.4rem', color: 'white', fontSize: '1.35rem' }}>Meeting Ready!</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.875rem', lineHeight: '1.5' }}>
+              Share this link or meeting ID with participants you want in your meeting.
             </p>
             
-            <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '1rem', marginBottom: '1.5rem' }}>
+            <div style={{ background: 'rgba(10, 15, 26, 0.7)', border: '1px solid var(--border-glass-strong)', borderRadius: '14px', padding: '1.1rem', marginBottom: '1.5rem' }}>
               <div style={{ marginBottom: '1rem' }}>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>Meeting Link</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <input type="text" readOnly value={`${window.location.origin}/room/${createdRoomId}`} style={{ flex: 1, background: 'transparent', border: 'none', color: 'white', outline: 'none', fontSize: '0.9rem' }} />
-                  <button onClick={copyLink} className="btn-icon" style={{ background: 'rgba(255,255,255,0.1)', padding: '0.4rem', border: 'none', color: 'white', cursor: 'pointer' }} title="Copy Link">
-                    {linkCopied ? <Check size={16} color="#10b981" /> : <Copy size={16} />}
+                <div style={{ fontSize: '0.775rem', color: 'var(--text-muted)', marginBottom: '0.3rem', fontWeight: '600', textTransform: 'uppercase' }}>Meeting Link</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.04)', padding: '0.5rem 0.75rem', borderRadius: '10px' }}>
+                  <input type="text" readOnly value={`${window.location.origin}/room/${createdRoomId}`} style={{ flex: 1, background: 'transparent', border: 'none', color: 'white', outline: 'none', fontSize: '0.85rem' }} />
+                  <button onClick={copyLink} style={{ background: 'rgba(255,255,255,0.1)', padding: '0.4rem 0.6rem', border: 'none', borderRadius: '8px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem' }}>
+                    {linkCopied ? <Check size={14} color="var(--accent-emerald)" /> : <Copy size={14} />}
+                    {linkCopied ? 'Copied' : 'Copy'}
                   </button>
                 </div>
               </div>
               
-              <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0.8rem 0' }}></div>
-              
               <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>Meeting ID</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <input type="text" readOnly value={createdRoomId} style={{ flex: 1, background: 'transparent', border: 'none', color: 'white', outline: 'none', fontSize: '0.9rem' }} />
-                  <button onClick={copyId} className="btn-icon" style={{ background: 'rgba(255,255,255,0.1)', padding: '0.4rem', border: 'none', color: 'white', cursor: 'pointer' }} title="Copy Meeting ID">
-                    {idCopied ? <Check size={16} color="#10b981" /> : <Copy size={16} />}
+                <div style={{ fontSize: '0.775rem', color: 'var(--text-muted)', marginBottom: '0.3rem', fontWeight: '600', textTransform: 'uppercase' }}>Meeting ID</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.04)', padding: '0.5rem 0.75rem', borderRadius: '10px' }}>
+                  <input type="text" readOnly value={createdRoomId} style={{ flex: 1, background: 'transparent', border: 'none', color: 'white', outline: 'none', fontSize: '0.85rem' }} />
+                  <button onClick={copyId} style={{ background: 'rgba(255,255,255,0.1)', padding: '0.4rem 0.6rem', border: 'none', borderRadius: '8px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem' }}>
+                    {idCopied ? <Check size={14} color="var(--accent-emerald)" /> : <Copy size={14} />}
+                    {idCopied ? 'Copied' : 'Copy'}
                   </button>
                 </div>
               </div>
@@ -187,10 +248,10 @@ export default function Dashboard() {
             
             <button 
               onClick={joinCreatedRoom} 
-              className="btn" 
-              style={{ width: '100%', padding: '0.8rem', background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}
+              className="btn btn-primary" 
+              style={{ width: '100%', padding: '0.85rem' }}
             >
-              Join Meeting Now
+              Start & Join Meeting
             </button>
           </div>
         </div>

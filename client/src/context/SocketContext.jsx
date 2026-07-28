@@ -9,19 +9,20 @@ export const SocketProvider = ({ children }) => {
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
+    let newSocket;
     if (user) {
-      const newSocket = io('http://localhost:5000');
+      const serverUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : `${window.location.protocol}//${window.location.hostname}:5000`;
+      newSocket = io(serverUrl);
       setSocket(newSocket);
-
-      return () => {
-        newSocket.close();
-      };
     } else {
-      if (socket) {
-        socket.close();
-        setSocket(null);
-      }
+      setSocket(null);
     }
+
+    return () => {
+      if (newSocket) {
+        newSocket.close();
+      }
+    };
   }, [user]);
 
   return (
@@ -30,3 +31,4 @@ export const SocketProvider = ({ children }) => {
     </SocketContext.Provider>
   );
 };
+

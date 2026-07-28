@@ -11,6 +11,27 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRoutes);
 
+// Map of valid rooms that have been explicitly created
+const validRooms = new Set();
+
+// API to create a new room
+app.post('/api/rooms', (req, res) => {
+  const { roomId } = req.body;
+  if (!roomId) return res.status(400).json({ error: 'Room ID is required' });
+  validRooms.add(roomId);
+  res.json({ success: true, roomId });
+});
+
+// API to verify if a room exists
+app.get('/api/rooms/:roomId', (req, res) => {
+  const { roomId } = req.params;
+  if (validRooms.has(roomId)) {
+    res.json({ exists: true });
+  } else {
+    res.json({ exists: false });
+  }
+});
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {

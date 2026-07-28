@@ -92,7 +92,7 @@ export default function Room() {
       socket.off('user-connected');
       socket.off('user-disconnected');
     };
-  }, [roomId, socket, user]);
+  }, [roomId, socket, user, isValidating, roomError]);
 
   const toggleVideo = () => {
     if (stream) {

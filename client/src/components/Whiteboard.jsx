@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useContext, useCallback } from 'react';
 import { SocketContext } from '../context/SocketContext';
-import { Trash2, Download, Eraser, Edit2, RotateCcw } from 'lucide-react';
+import { Trash2, Download, Eraser, Edit2 } from 'lucide-react';
 
 export default function Whiteboard({ roomId }) {
   const canvasRef = useRef(null);

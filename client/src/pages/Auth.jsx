@@ -55,7 +55,7 @@ export default function Auth() {
             background: 'linear-gradient(135deg, var(--accent-indigo), var(--accent-violet))',
             display: 'flex',
             alignItems: 'center',
-            justify-content: 'center',
+            justifyContent: 'center',
             boxShadow: '0 0 25px rgba(99, 102, 241, 0.4)'
           }}>
             <Video size={28} color="white" />

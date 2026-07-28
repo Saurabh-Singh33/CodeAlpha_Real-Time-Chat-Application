@@ -1,14 +1,17 @@
 import React, { useEffect, useRef, useState, useContext } from 'react';
 import { SocketContext } from '../context/SocketContext';
 import { AuthContext } from '../context/AuthContext';
+import { MicOff, VideoOff, Monitor } from 'lucide-react';
 
-export default function VideoGrid({ localStream, roomId, isScreenSharing }) {
+export default function VideoGrid({ localStream, isScreenSharing, isVideoMuted, isAudioMuted }) {
   const { socket } = useContext(SocketContext);
   const { user } = useContext(AuthContext);
-  const [peers, setPeers] = useState({}); // { socketId: { stream, username } }
+  const [peers, setPeers] = useState({}); // { socketId: { stream, username, isVideoMuted, isAudioMuted } }
   const peersRef = useRef({});
+  const pendingCandidatesRef = useRef({});
   const localVideoRef = useRef();
   const [reactions, setReactions] = useState({}); // { socketId: { emoji, id } }
+  const [userMediaStates, setUserMediaStates] = useState({}); // { socketId: { isVideoMuted, isAudioMuted } }
 
   useEffect(() => {
     if (localVideoRef.current && localStream) {
@@ -21,25 +24,23 @@ export default function VideoGrid({ localStream, roomId, isScreenSharing }) {
     const handleSwitchTrack = (e) => {
       const newTrack = e.detail.track;
       
-      // Update peers
+      // Update existing WebRTC peer senders
       Object.values(peersRef.current).forEach(pc => {
         const senders = pc.getSenders();
         const sender = senders.find(s => s.track && s.track.kind === 'video');
-        if (sender) {
+        if (sender && newTrack) {
           sender.replaceTrack(newTrack);
         }
       });
       
       // Update local video element
-      if (localVideoRef.current) {
-        if (newTrack.kind === 'video') {
-           const tracks = [newTrack];
-           if (localStream) {
-             const audioTrack = localStream.getAudioTracks()[0];
-             if (audioTrack) tracks.push(audioTrack);
-           }
-           localVideoRef.current.srcObject = new MediaStream(tracks);
+      if (localVideoRef.current && newTrack) {
+        const tracks = [newTrack];
+        if (localStream) {
+          const audioTrack = localStream.getAudioTracks()[0];
+          if (audioTrack) tracks.push(audioTrack);
         }
+        localVideoRef.current.srcObject = new MediaStream(tracks);
       }
     };
     
@@ -47,7 +48,7 @@ export default function VideoGrid({ localStream, roomId, isScreenSharing }) {
     return () => window.removeEventListener('switch-track', handleSwitchTrack);
   }, [localStream]);
 
-  // Handle reactions
+  // Handle reactions & media states from socket
   useEffect(() => {
     if (!socket) return;
     
@@ -67,16 +68,42 @@ export default function VideoGrid({ localStream, roomId, isScreenSharing }) {
           }
           return prev;
         });
-      }, 2000);
+      }, 2200);
+    };
+
+    const handleUserMediaState = ({ userId, isVideoMuted, isAudioMuted }) => {
+      setUserMediaStates(prev => ({
+        ...prev,
+        [userId]: { isVideoMuted, isAudioMuted }
+      }));
     };
 
     socket.on('reaction', handleReaction);
-    return () => socket.off('reaction', handleReaction);
+    socket.on('user-media-state', handleUserMediaState);
+
+    return () => {
+      socket.off('reaction', handleReaction);
+      socket.off('user-media-state', handleUserMediaState);
+    };
   }, [socket]);
 
-
+  // WebRTC Signaling with ICE candidate queueing
   useEffect(() => {
     if (!socket || !localStream) return;
+
+    const addPendingCandidates = async (targetSocketId, pc) => {
+      const pending = pendingCandidatesRef.current[targetSocketId];
+      if (pending && pending.length > 0) {
+        for (const candidate of pending) {
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+          } catch (e) {
+            console.error('Error adding pending ICE candidate', e);
+          }
+        }
+        delete pendingCandidatesRef.current[targetSocketId];
+      }
+    };
 
     const createPeerConnection = (targetSocketId, username, initiator) => {
       const peerConnection = new RTCPeerConnection({
@@ -115,8 +142,10 @@ export default function VideoGrid({ localStream, roomId, isScreenSharing }) {
       if (initiator) {
         peerConnection.createOffer()
           .then(offer => {
-            peerConnection.setLocalDescription(offer);
-            socket.emit('offer', { target: targetSocketId, sdp: offer });
+            return peerConnection.setLocalDescription(offer);
+          })
+          .then(() => {
+            socket.emit('offer', { target: targetSocketId, sdp: peerConnection.localDescription });
           });
       }
 
@@ -133,6 +162,7 @@ export default function VideoGrid({ localStream, roomId, isScreenSharing }) {
     socket.on('offer', async ({ caller, sdp, username }) => {
       const pc = createPeerConnection(caller, username, false);
       await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+      await addPendingCandidates(caller, pc);
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       socket.emit('answer', { target: caller, sdp: answer });
@@ -143,14 +173,24 @@ export default function VideoGrid({ localStream, roomId, isScreenSharing }) {
       const pc = peersRef.current[caller];
       if (pc) {
         await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+        await addPendingCandidates(caller, pc);
       }
     });
 
     // Handle ICE candidates
     socket.on('ice-candidate', async ({ caller, candidate }) => {
       const pc = peersRef.current[caller];
-      if (pc) {
-        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      if (pc && pc.remoteDescription) {
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (e) {
+          console.error('Error adding ICE candidate', e);
+        }
+      } else {
+        if (!pendingCandidatesRef.current[caller]) {
+          pendingCandidatesRef.current[caller] = [];
+        }
+        pendingCandidatesRef.current[caller].push(candidate);
       }
     });
 
@@ -159,6 +199,7 @@ export default function VideoGrid({ localStream, roomId, isScreenSharing }) {
       if (peersRef.current[userId]) {
         peersRef.current[userId].close();
         delete peersRef.current[userId];
+        delete pendingCandidatesRef.current[userId];
         
         setPeers(prev => {
           const newPeers = { ...prev };
@@ -179,9 +220,21 @@ export default function VideoGrid({ localStream, roomId, isScreenSharing }) {
 
   return (
     <div className="video-grid">
+      {/* Local User Tile */}
       <div className="video-container">
-        <video ref={localVideoRef} autoPlay playsInline muted style={{ objectFit: isScreenSharing ? 'contain' : 'cover' }} />
-        <div className="video-label">{user?.username} (You)</div>
+        {!isVideoMuted ? (
+          <video ref={localVideoRef} autoPlay playsInline muted style={{ objectFit: isScreenSharing ? 'contain' : 'cover' }} />
+        ) : (
+          <div className="avatar-fallback">
+            {user?.username?.charAt(0).toUpperCase()}
+          </div>
+        )}
+        <div className="video-label">
+          {user?.username} (You)
+          {isAudioMuted && <span className="video-status-icon"><MicOff size={12} /></span>}
+          {isVideoMuted && <span className="video-status-icon"><VideoOff size={12} /></span>}
+          {isScreenSharing && <span className="video-status-icon" style={{ background: 'rgba(99, 102, 241, 0.3)', color: 'var(--accent-indigo)' }}><Monitor size={12} /></span>}
+        </div>
         {reactions[socket?.id] && (
           <div className="reaction-overlay" key={reactions[socket.id].id}>
             {reactions[socket.id].emoji}
@@ -189,31 +242,47 @@ export default function VideoGrid({ localStream, roomId, isScreenSharing }) {
         )}
       </div>
       
-      {Object.entries(peers).map(([socketId, peerData]) => (
-        <RemoteVideo 
-          key={socketId} 
-          stream={peerData.stream} 
-          username={peerData.username} 
-          reaction={reactions[socketId]}
-        />
-      ))}
+      {/* Remote Users Tiles */}
+      {Object.entries(peers).map(([socketId, peerData]) => {
+        const mediaState = userMediaStates[socketId] || {};
+        return (
+          <RemoteVideo 
+            key={socketId} 
+            stream={peerData.stream} 
+            username={peerData.username} 
+            reaction={reactions[socketId]}
+            isVideoMuted={mediaState.isVideoMuted}
+            isAudioMuted={mediaState.isAudioMuted}
+          />
+        );
+      })}
     </div>
   );
 }
 
-function RemoteVideo({ stream, username, reaction }) {
+function RemoteVideo({ stream, username, reaction, isVideoMuted, isAudioMuted }) {
   const videoRef = useRef();
 
   useEffect(() => {
-    if (videoRef.current && stream) {
+    if (videoRef.current && stream && !isVideoMuted) {
       videoRef.current.srcObject = stream;
     }
-  }, [stream]);
+  }, [stream, isVideoMuted]);
 
   return (
     <div className="video-container">
-      <video ref={videoRef} autoPlay playsInline />
-      <div className="video-label">{username}</div>
+      {!isVideoMuted ? (
+        <video ref={videoRef} autoPlay playsInline />
+      ) : (
+        <div className="avatar-fallback">
+          {username?.charAt(0).toUpperCase()}
+        </div>
+      )}
+      <div className="video-label">
+        {username}
+        {isAudioMuted && <span className="video-status-icon"><MicOff size={12} /></span>}
+        {isVideoMuted && <span className="video-status-icon"><VideoOff size={12} /></span>}
+      </div>
       {reaction && (
         <div className="reaction-overlay" key={reaction.id}>
           {reaction.emoji}

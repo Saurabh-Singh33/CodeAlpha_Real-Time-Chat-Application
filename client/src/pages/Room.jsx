@@ -5,7 +5,10 @@ import { AuthContext } from '../context/AuthContext';
 import VideoGrid from '../components/VideoGrid';
 import Chat from '../components/Chat';
 import Whiteboard from '../components/Whiteboard';
-import { Monitor, MonitorUp, Video, VideoOff, Mic, MicOff, MessageSquare, PenTool, LogOut, Circle, Smile, X, StopCircle, Play, Activity, Users, UserPlus, Settings, Layout, Copy, Check } from 'lucide-react';
+import { 
+  Monitor, MonitorUp, Video, VideoOff, Mic, MicOff, MessageSquare, 
+  Smile, X, StopCircle, Users, UserPlus, Layout, Copy, Check, Disc, Clock
+} from 'lucide-react';
 
 export default function Room() {
   const { roomId } = useParams();
@@ -17,6 +20,7 @@ export default function Room() {
   const [sidePanel, setSidePanel] = useState('chat'); // chat | users
   
   const [stream, setStream] = useState(null);
+  const streamRef = useRef(null);
   const [isVideoMuted, setIsVideoMuted] = useState(false);
   const [isAudioMuted, setIsAudioMuted] = useState(false);
   
@@ -29,22 +33,49 @@ export default function Room() {
   const [inviteInput, setInviteInput] = useState('');
   const [inviteStatus, setInviteStatus] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
+  
   const mediaRecorderRef = useRef(null);
   const recordedChunksRef = useRef([]);
   
   const [isValidating, setIsValidating] = useState(true);
   const [roomError, setRoomError] = useState('');
   
+  // Call Duration Timer
+  const [secondsElapsed, setSecondsElapsed] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSecondsElapsed(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatDuration = (totalSeconds) => {
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    if (hrs > 0) {
+      return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
+  const getServerUrl = () => {
+    return window.location.hostname === 'localhost' 
+      ? 'http://localhost:5000' 
+      : `${window.location.protocol}//${window.location.hostname}:5000`;
+  };
+
   useEffect(() => {
     const validateRoom = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/rooms/${roomId}`);
+        const res = await fetch(`${getServerUrl()}/api/rooms/${roomId}`);
         const data = await res.json();
         if (!data.exists) {
-          setRoomError('Meeting not found.');
+          setRoomError('Meeting not found or link expired.');
         }
-      } catch (err) {
-        setRoomError('Failed to verify meeting. Please check your connection.');
+      } catch (_err) {
+        setRoomError('Failed to verify meeting. Please check network connection.');
       } finally {
         setIsValidating(false);
       }
@@ -59,11 +90,11 @@ export default function Room() {
     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       .then(currentStream => {
         setStream(currentStream);
+        streamRef.current = currentStream;
         socket.emit('join-room', roomId, user.username);
       })
       .catch(err => {
-        console.error('Failed to get local stream', err);
-        // Fallback for users without camera/mic
+        console.warn('Media access error, joining audio/video fallback', err);
         socket.emit('join-room', roomId, user.username);
       });
       
@@ -85,8 +116,9 @@ export default function Room() {
     });
 
     return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
       }
       socket.off('room-users');
       socket.off('user-connected');
@@ -95,22 +127,30 @@ export default function Room() {
   }, [roomId, socket, user, isValidating, roomError]);
 
   const toggleVideo = () => {
-    if (stream) {
-      const videoTrack = stream.getVideoTracks()[0];
+    if (streamRef.current) {
+      const videoTrack = streamRef.current.getVideoTracks()[0];
       if (videoTrack) {
-        videoTrack.enabled = !videoTrack.enabled;
-        setIsVideoMuted(!videoTrack.enabled);
+        const nextState = !videoTrack.enabled;
+        videoTrack.enabled = nextState;
+        setIsVideoMuted(!nextState);
+        socket?.emit('media-state', { isVideoMuted: !nextState, isAudioMuted });
       }
+    } else {
+      setIsVideoMuted(prev => !prev);
     }
   };
 
   const toggleAudio = () => {
-    if (stream) {
-      const audioTrack = stream.getAudioTracks()[0];
+    if (streamRef.current) {
+      const audioTrack = streamRef.current.getAudioTracks()[0];
       if (audioTrack) {
-        audioTrack.enabled = !audioTrack.enabled;
-        setIsAudioMuted(!audioTrack.enabled);
+        const nextState = !audioTrack.enabled;
+        audioTrack.enabled = nextState;
+        setIsAudioMuted(!nextState);
+        socket?.emit('media-state', { isVideoMuted, isAudioMuted: !nextState });
       }
+    } else {
+      setIsAudioMuted(prev => !prev);
     }
   };
   
@@ -118,18 +158,14 @@ export default function Room() {
     if (!isScreenSharing) {
       try {
         const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-        
-        // When user clicks 'Stop sharing' on browser UI
-        screenStream.getVideoTracks()[0].onended = () => {
+        const screenTrack = screenStream.getVideoTracks()[0];
+
+        screenTrack.onended = () => {
           stopScreenShare();
         };
         
-        // We will pass an event or flag to VideoGrid to replace tracks, 
-        // but for now, we'll just emit an event to socket or handle it in VideoGrid.
-        // For simplicity, we can set a state that VideoGrid watches.
         setIsScreenSharing(true);
-        // Dispatching a custom event to tell VideoGrid to switch track
-        window.dispatchEvent(new CustomEvent('switch-track', { detail: { track: screenStream.getVideoTracks()[0] } }));
+        window.dispatchEvent(new CustomEvent('switch-track', { detail: { track: screenTrack } }));
       } catch (err) {
         console.error('Error sharing screen:', err);
       }
@@ -140,15 +176,17 @@ export default function Room() {
 
   const stopScreenShare = () => {
     setIsScreenSharing(false);
-    if (stream) {
-      window.dispatchEvent(new CustomEvent('switch-track', { detail: { track: stream.getVideoTracks()[0] } }));
+    if (streamRef.current) {
+      const videoTrack = streamRef.current.getVideoTracks()[0];
+      if (videoTrack) {
+        window.dispatchEvent(new CustomEvent('switch-track', { detail: { track: videoTrack } }));
+      }
     }
   };
 
   const toggleRecording = async () => {
     if (!isRecording) {
       try {
-        // Record the screen to capture the whole meeting view
         const displayStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
         
         const options = { mimeType: 'video/webm;codecs=vp9' };
@@ -181,10 +219,12 @@ export default function Room() {
         setIsRecording(true);
         
         displayStream.getVideoTracks()[0].onended = () => {
-          mediaRecorder.stop();
+          if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            mediaRecorderRef.current.stop();
+          }
         };
       } catch (err) {
-        console.error("Error starting recording", err);
+        console.error('Error starting recording', err);
       }
     } else {
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
@@ -199,6 +239,10 @@ export default function Room() {
   };
   
   const leaveRoom = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
     navigate('/');
   };
 
@@ -219,16 +263,16 @@ export default function Room() {
         setShowInviteModal(false);
         setInviteStatus('');
         setInviteInput('');
-      }, 2000);
-    }, 1500);
+      }, 1500);
+    }, 1200);
   };
 
   if (isValidating) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'white', background: 'var(--bg-dark)' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-          <div className="live-dot" style={{ width: '20px', height: '20px' }}></div>
-          <p>Getting ready...</p>
+          <div className="live-dot" style={{ width: '24px', height: '24px' }}></div>
+          <p style={{ color: 'var(--text-secondary)', fontWeight: '500' }}>Connecting to meeting...</p>
         </div>
       </div>
     );
@@ -236,11 +280,13 @@ export default function Room() {
 
   if (roomError) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'white', background: 'var(--bg-dark)' }}>
-        <div className="glass-panel" style={{ padding: '3rem', borderRadius: '12px', textAlign: 'center', maxWidth: '400px', width: '90%' }}>
-          <h2 style={{ marginBottom: '1rem', color: '#ef4444' }}>{roomError}</h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>The meeting link you used is invalid or the meeting has ended.</p>
-          <button className="btn" onClick={() => navigate('/')} style={{ background: '#6366f1', color: 'white', border: 'none', padding: '0.8rem 1.5rem', borderRadius: '8px', fontWeight: 'bold' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'white', background: 'var(--bg-dark)', padding: '1rem' }}>
+        <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', maxWidth: '420px', width: '100%' }}>
+          <h2 style={{ marginBottom: '1rem', color: 'var(--accent-rose)' }}>{roomError}</h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.9rem', lineHeight: '1.5' }}>
+            The meeting code you entered is invalid or has expired.
+          </p>
+          <button className="btn btn-primary" onClick={() => navigate('/')} style={{ width: '100%' }}>
             Return to Dashboard
           </button>
         </div>
@@ -252,37 +298,55 @@ export default function Room() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       <div className="room-container">
         <div className="main-stage">
+          {/* Top Bar Header */}
           <div className="top-bar">
-            <div className="room-title">Meeting Room: {roomId}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <button className="btn" onClick={copyRoomLink} style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', padding: '0.4rem 0.8rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-                {linkCopied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
-                {linkCopied ? 'Copied' : 'Copy Link'}
+            <div className="room-title">
+              <span style={{ color: 'var(--text-muted)' }}>Room:</span> 
+              <span>{roomId.length > 12 ? `${roomId.substring(0, 12)}...` : roomId}</span>
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              {isRecording && (
+                <div className="recording-badge">
+                  <div className="live-dot" style={{ background: '#ef4444' }}></div> REC
+                </div>
+              )}
+
+              <button className="feature-btn" onClick={copyRoomLink} style={{ fontSize: '0.8rem', padding: '5px 12px' }}>
+                {linkCopied ? <Check size={14} color="var(--accent-emerald)" /> : <Copy size={14} />}
+                {linkCopied ? 'Copied Link' : 'Copy Link'}
               </button>
+              
               <div className="live-badge">
                 <div className="live-dot"></div> Live
               </div>
             </div>
           </div>
 
+          {/* Center Stage: Video Grid vs Whiteboard */}
           {activeTab === 'video' ? (
-            <VideoGrid localStream={stream} roomId={roomId} isScreenSharing={isScreenSharing} />
+            <VideoGrid 
+              localStream={stream} 
+              roomId={roomId} 
+              isScreenSharing={isScreenSharing} 
+              isVideoMuted={isVideoMuted}
+              isAudioMuted={isAudioMuted}
+            />
           ) : (
             <Whiteboard roomId={roomId} />
           )}
           
-          {/* Bottom Features Bar */}
-          <div className="bottom-features-bar" style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-            {/* Left Section */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', color: 'var(--text-secondary)', flex: 1 }}>
-              <Play size={20} />
-              <Activity size={24} />
-              <span style={{ fontSize: '0.8rem' }}>01:36</span>
+          {/* Bottom Dock Control Bar */}
+          <div className="bottom-features-bar">
+            {/* Left Counter */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '0.85rem', flex: 1 }}>
+              <Clock size={16} color="var(--accent-cyan)" />
+              <span style={{ fontWeight: '600', fontFamily: 'monospace' }}>{formatDuration(secondsElapsed)}</span>
             </div>
 
-            {/* Center Controls */}
-            <div className="controls-bar" style={{ display: 'flex', gap: '1.25rem', margin: '0 auto', boxShadow: 'none', border: 'none', background: 'transparent', padding: 0 }}>
-              {/* React */}
+            {/* Center Call Controls */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              {/* Emoji Reactions */}
               <div style={{ position: 'relative' }}>
                 {showReactions && (
                   <div className="reaction-menu">
@@ -293,93 +357,96 @@ export default function Room() {
                     <button className="reaction-btn" onClick={() => sendReaction('🎉')}>🎉</button>
                   </div>
                 )}
-                <button className="btn-icon" onClick={() => setShowReactions(!showReactions)} title="React">
-                  <Smile size={24} />
+                <button className="btn-icon" onClick={() => setShowReactions(!showReactions)} title="Send Reaction">
+                  <Smile size={22} />
                 </button>
               </div>
 
-              {/* Mic */}
-              <button className={`btn-icon ${isAudioMuted ? 'btn-icon-danger' : ''}`} onClick={toggleAudio} title="Toggle Mic">
-                {isAudioMuted ? <MicOff size={24} /> : <Mic size={24} />}
+              {/* Mic Toggle */}
+              <button className={`btn-icon ${isAudioMuted ? 'btn-icon-danger' : ''}`} onClick={toggleAudio} title={isAudioMuted ? 'Unmute Mic' : 'Mute Mic'}>
+                {isAudioMuted ? <MicOff size={22} /> : <Mic size={22} />}
               </button>
               
-              {/* Leave - Red circle in middle */}
-              <button className="btn-icon leave-btn" onClick={leaveRoom} style={{ width: '64px', height: '64px', borderRadius: '50%' }} title="Leave Room">
-                <StopCircle size={28} />
+              {/* Leave Call */}
+              <button className="btn-icon leave-btn" onClick={leaveRoom} title="Leave Meeting">
+                <StopCircle size={26} />
               </button>
 
-              {/* Camera */}
-              <button className={`btn-icon ${isVideoMuted ? 'btn-icon-danger' : ''}`} onClick={toggleVideo} title="Toggle Camera">
-                {isVideoMuted ? <VideoOff size={24} /> : <Video size={24} />}
+              {/* Video Toggle */}
+              <button className={`btn-icon ${isVideoMuted ? 'btn-icon-danger' : ''}`} onClick={toggleVideo} title={isVideoMuted ? 'Start Camera' : 'Stop Camera'}>
+                {isVideoMuted ? <VideoOff size={22} /> : <Video size={22} />}
               </button>
 
-              {/* Share */}
+              {/* Screen Share */}
               <button className={`btn-icon ${isScreenSharing ? 'active' : ''}`} onClick={toggleScreenShare} title="Share Screen">
-                {isScreenSharing ? <Monitor size={24} /> : <MonitorUp size={24} />}
+                {isScreenSharing ? <Monitor size={22} /> : <MonitorUp size={22} />}
+              </button>
+
+              {/* Record Screen */}
+              <button className={`btn-icon ${isRecording ? 'btn-icon-danger' : ''}`} onClick={toggleRecording} title={isRecording ? 'Stop Recording' : 'Record Meeting'}>
+                <Disc size={22} />
               </button>
             </div>
             
-            {/* Right Section */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flex: 1, justifyContent: 'flex-end' }}>
+            {/* Right Tools Section */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, justifyContent: 'flex-end' }}>
               <button className="feature-btn" onClick={() => setActiveTab(activeTab === 'video' ? 'whiteboard' : 'video')}>
-                <Layout size={18} />
-                <span className="hide-on-mobile">{activeTab === 'video' ? 'Whiteboard' : 'Video'}</span>
+                <Layout size={16} />
+                <span className="hide-on-mobile">{activeTab === 'video' ? 'Whiteboard' : 'Video Grid'}</span>
               </button>
 
-              <div 
-                className={`feature-btn hide-on-mobile ${sidePanel === 'users' ? 'active' : ''}`} 
-                onClick={() => setSidePanel(sidePanel === 'users' ? 'chat' : 'users')}
-                style={{ cursor: 'pointer' }}
-              >
-                <Users size={18} />
-                <span style={{ opacity: 0.8, marginLeft: '4px' }}>{usersInRoom.length + 1}</span>
-              </div>
+              <button className={`feature-btn ${sidePanel === 'users' ? 'active' : ''}`} onClick={() => setSidePanel(sidePanel === 'users' ? 'chat' : 'users')}>
+                <Users size={16} />
+                <span className="hide-on-mobile">{usersInRoom.length + 1}</span>
+              </button>
               
-              <div className="feature-btn hide-on-mobile" onClick={() => setShowInviteModal(true)} style={{ cursor: 'pointer' }}>
-                <UserPlus size={18} />
-              </div>
-              
-              <div style={{ color: 'var(--text-secondary)', cursor: 'pointer', marginLeft: '10px' }}>
-                <Settings size={20} />
-              </div>
+              <button className="feature-btn" onClick={() => setShowInviteModal(true)} title="Invite User">
+                <UserPlus size={16} />
+              </button>
             </div>
           </div>
         </div>
 
-        <div className="side-panel dark-panel">
+        {/* Side Panel (Chat & Participants) */}
+        <div className="side-panel">
           <div className="side-panel-header">
-            <span className="side-panel-title">Group chat</span>
-            <button className="btn-icon" style={{ width: '36px', height: '36px', background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none' }} onClick={() => setSidePanel(sidePanel === 'chat' ? 'users' : 'chat')}>
+            <span className="side-panel-title">{sidePanel === 'chat' ? 'Group Chat' : 'Participants'}</span>
+            <button className="btn-icon" style={{ width: '36px', height: '36px' }} onClick={() => setSidePanel(sidePanel === 'chat' ? 'users' : 'chat')}>
               {sidePanel === 'chat' ? <Users size={16} /> : <MessageSquare size={16} />}
             </button>
           </div>
           
           {sidePanel === 'chat' && <Chat roomId={roomId} />}
+          
           {sidePanel === 'users' && (
-            <div style={{ padding: '1rem', color: 'white', display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto', flex: 1 }}>
-              <div style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+            <div style={{ padding: '1.25rem', color: 'white', display: 'flex', flexDirection: 'column', gap: '0.75rem', overflowY: 'auto', flex: 1 }}>
+              {/* You */}
+              <div style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.85rem', border: '1px solid var(--border-glass)' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-indigo), var(--accent-violet))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.95rem' }}>
                   {user?.username?.charAt(0).toUpperCase()}
                 </div>
-                <div>
+                <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{user?.username} (You)</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--accent-emerald)' }}>Host / Active</div>
                 </div>
               </div>
               
+              {/* Other Participants */}
               {usersInRoom.map(u => (
-                <div key={u.id} style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                <div key={u.id} style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.85rem', border: '1px solid var(--border-glass)' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.95rem' }}>
                     {u.username?.charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{u.username}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Participant</div>
                   </div>
                 </div>
               ))}
               
               {usersInRoom.length === 0 && (
-                <div style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: '2rem', fontSize: '0.9rem' }}>
-                  You are the only one here.
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '3rem', fontSize: '0.875rem' }}>
+                  No other participants in room yet.
                 </div>
               )}
             </div>
@@ -389,48 +456,36 @@ export default function Room() {
       
       {/* Invite Modal */}
       {showInviteModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="glass-panel" style={{ width: '90%', maxWidth: '400px', padding: '2rem', position: 'relative' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '1rem' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '420px', padding: '2rem', position: 'relative' }}>
             <button 
               onClick={() => setShowInviteModal(false)} 
-              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
+              style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'rgba(255,255,255,0.08)', border: 'none', color: 'var(--text-secondary)', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
             >
-              <X size={20} />
+              <X size={18} />
             </button>
-            <h3 style={{ marginTop: 0, marginBottom: '1.5rem', color: 'white' }}>Invite someone</h3>
+            <h3 style={{ marginTop: 0, marginBottom: '1.25rem', color: 'white', fontSize: '1.3rem' }}>Invite People</h3>
             
             <form onSubmit={handleSendInvite}>
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                  Email or Phone Number
-                </label>
+              <div className="form-group">
+                <label className="form-label">Email or Phone Number</label>
                 <input 
                   type="text" 
                   className="form-control" 
-                  placeholder="e.g. user@gmail.com or +1 234..."
+                  placeholder="e.g. colleague@company.com"
                   value={inviteInput}
                   onChange={e => setInviteInput(e.target.value)}
-                  style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px' }}
                   required
                 />
               </div>
               
               <button 
                 type="submit" 
-                className="btn" 
+                className="btn btn-primary" 
                 disabled={inviteStatus !== ''}
-                style={{ 
-                  width: '100%', 
-                  padding: '0.75rem', 
-                  background: inviteStatus === 'sent' ? '#10b981' : 'linear-gradient(135deg, #6366f1, #8b5cf6)', 
-                  color: 'white', 
-                  border: 'none', 
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  cursor: inviteStatus !== '' ? 'not-allowed' : 'pointer'
-                }}
+                style={{ width: '100%', padding: '0.85rem' }}
               >
-                {inviteStatus === 'sending' ? 'Sending...' : inviteStatus === 'sent' ? 'Invite Sent!' : 'Send Invite'}
+                {inviteStatus === 'sending' ? 'Sending Invite...' : inviteStatus === 'sent' ? '✓ Invite Sent!' : 'Send Meeting Invite'}
               </button>
             </form>
           </div>

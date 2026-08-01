@@ -252,19 +252,44 @@ export default function Room() {
     setTimeout(() => setLinkCopied(false), 2000);
   };
 
-  const handleSendInvite = (e) => {
+  const [inviteError, setInviteError] = useState('');
+
+  const handleSendInvite = async (e) => {
     e.preventDefault();
     if (!inviteInput.trim()) return;
     
     setInviteStatus('sending');
-    setTimeout(() => {
-      setInviteStatus('sent');
-      setTimeout(() => {
-        setShowInviteModal(false);
+    setInviteError('');
+    
+    try {
+      const res = await fetch(`${getServerUrl()}/api/rooms/invite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: inviteInput.trim(),
+          roomId,
+          roomLink: window.location.href,
+          inviterName: user?.username
+        })
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        setInviteStatus('sent');
+        setTimeout(() => {
+          setShowInviteModal(false);
+          setInviteStatus('');
+          setInviteInput('');
+        }, 1800);
+      } else {
         setInviteStatus('');
-        setInviteInput('');
-      }, 1500);
-    }, 1200);
+        setInviteError(data.error || 'Failed to send invite email.');
+      }
+    } catch (_err) {
+      setInviteStatus('');
+      setInviteError('Server error while sending email.');
+    }
   };
 
   if (isValidating) {
@@ -465,6 +490,12 @@ export default function Room() {
               <X size={18} />
             </button>
             <h3 style={{ marginTop: 0, marginBottom: '1.25rem', color: 'white', fontSize: '1.3rem' }}>Invite People</h3>
+            
+            {inviteError && (
+              <div style={{ background: 'rgba(244, 63, 94, 0.15)', border: '1px solid rgba(244, 63, 94, 0.3)', color: 'var(--accent-rose)', padding: '0.75rem', borderRadius: '10px', fontSize: '0.85rem', marginBottom: '1rem', lineHeight: '1.4' }}>
+                {inviteError}
+              </div>
+            )}
             
             <form onSubmit={handleSendInvite}>
               <div className="form-group">

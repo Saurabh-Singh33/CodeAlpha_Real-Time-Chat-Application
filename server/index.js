@@ -1,9 +1,11 @@
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const { createUser, getUserByUsername, createRoom, getRoom } = require('./db');
+const { sendMeetingInvite } = require('./mailer');
 
 const app = express();
 app.use(cors());
@@ -11,6 +13,27 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
+
+// API to send room invite via email
+app.post('/api/rooms/invite', async (req, res) => {
+  const { email, roomId, roomLink, inviterName } = req.body;
+  if (!email || !roomId) {
+    return res.status(400).json({ error: 'Email and Room ID are required' });
+  }
+
+  try {
+    await sendMeetingInvite({
+      toEmail: email,
+      roomId,
+      roomLink: roomLink || `http://localhost:5173/room/${roomId}`,
+      inviterName
+    });
+    res.json({ success: true, message: `Invite email sent to ${email}` });
+  } catch (err) {
+    console.error('Email invite error:', err.message);
+    res.status(500).json({ error: err.message || 'Failed to send invite email' });
+  }
+});
 
 // API to create a new room
 app.post('/api/rooms', async (req, res) => {

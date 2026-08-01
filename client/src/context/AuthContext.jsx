@@ -6,42 +6,49 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const serverUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : `${window.location.protocol}//${window.location.hostname}:5000`;
-          const res = await fetch(`${serverUrl}/api/auth/me`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          if (res.ok) {
-            const data = await res.json();
-            setUser({ username: data.username, id: data.id });
-          } else {
-            localStorage.removeItem('token');
-          }
-        } catch (err) {
-          console.error('Auth check failed', err);
-        }
+  const serverUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : `${window.location.protocol}//${window.location.hostname}:5000`;
+
+  const checkAuth = async () => {
+    try {
+      const res = await fetch(`${serverUrl}/api/auth/me`, {
+        credentials: 'include'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data.user);
+      } else {
+        setUser(null);
       }
+    } catch (err) {
+      console.error('Auth check failed', err);
+      setUser(null);
+    } finally {
       setLoading(false);
-    };
+    }
+  };
+
+  useEffect(() => {
     checkAuth();
   }, []);
 
-  const login = (token, username) => {
-    localStorage.setItem('token', token);
-    setUser({ username });
+  const login = (userData) => {
+    setUser(userData);
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    setUser(null);
+  const logout = async () => {
+    try {
+      await fetch(`${serverUrl}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      setUser(null);
+    } catch (err) {
+      console.error('Logout failed', err);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, checkAuth, serverUrl }}>
       {!loading && children}
     </AuthContext.Provider>
   );

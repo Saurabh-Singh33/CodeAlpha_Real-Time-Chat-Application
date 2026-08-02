@@ -28,6 +28,7 @@ export default function Signup() {
       const res = await fetch(`${serverUrl}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(formData)
       });
       const data = await res.json();
@@ -48,6 +49,7 @@ export default function Signup() {
       const res = await fetch(`${serverUrl}/api/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ idToken: credentialResponse.credential })
       });
       if (res.ok) {
@@ -126,7 +128,6 @@ export default function Signup() {
                 onError={() => setError('Google login Failed')}
                 text="signup_with"
                 shape="rectangular"
-                width="100%"
               />
             </div>
           </form>

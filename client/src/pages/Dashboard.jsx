@@ -1,8 +1,10 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Video, LogOut, Copy, Check, X, PlusCircle, Link, Shield, Users } from 'lucide-react';
+import { ThemeContext } from '../context/ThemeContext';
+import { Video, LogOut, Copy, Check, X, PlusCircle, Link as LinkIcon, Shield, Users, Sun, Moon } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import ProfilePanel from '../components/ProfilePanel';
 
 export default function Dashboard() {
   const [roomIdInput, setRoomIdInput] = useState('');
@@ -13,8 +15,16 @@ export default function Dashboard() {
   const [isJoining, setIsJoining] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [idCopied, setIdCopied] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   
   const { user, logout } = useContext(AuthContext);
+  const { theme, toggleTheme } = useContext(ThemeContext);
+  const [currentUser, setCurrentUser] = useState(user);
+
+  useEffect(() => {
+    setCurrentUser(user);
+  }, [user]);
+
   const navigate = useNavigate();
 
   const getServerUrl = () => {
@@ -100,16 +110,20 @@ export default function Dashboard() {
           <div style={{ background: 'linear-gradient(135deg, var(--accent-indigo), var(--accent-violet))', padding: '8px', borderRadius: '12px', display: 'flex' }}>
             <Video color="white" size={20} />
           </div>
-          <span style={{ background: 'linear-gradient(135deg, #fff, #cbd5e1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            RealComm
+          <span style={{ background: 'linear-gradient(135deg, var(--accent-indigo), var(--accent-violet))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            VartaConnect
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-indigo), var(--accent-cyan))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.9rem' }}>
-              {user?.username?.charAt(0).toUpperCase()}
+          <button className="btn-icon" onClick={toggleTheme} title="Toggle Theme" style={{ width: '40px', height: '40px' }}>
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }} onClick={() => setShowProfile(true)}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-indigo), var(--accent-cyan))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.9rem', color: 'white' }}>
+              {currentUser?.name?.charAt(0).toUpperCase() || currentUser?.username?.charAt(0).toUpperCase()}
             </div>
-            <span style={{ fontWeight: '500', color: 'var(--text-secondary)' }}>{user?.username}</span>
+            <span style={{ fontWeight: '500', color: 'var(--text-secondary)' }}>{currentUser?.name || currentUser?.username}</span>
           </div>
           <button className="btn-icon" onClick={logout} title="Logout" style={{ width: '40px', height: '40px' }}>
             <LogOut size={18} />
@@ -164,7 +178,7 @@ export default function Dashboard() {
                   style={{ width: '100%', paddingLeft: '2.5rem' }}
                   required
                 />
-                <Link size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                <LinkIcon size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               </div>
               <button type="submit" className="btn btn-secondary" disabled={isJoining} style={{ padding: '0 1.5rem', fontWeight: '600' }}>
                 {isJoining ? 'Verifying...' : 'Join'}
@@ -256,6 +270,13 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      <ProfilePanel 
+        isOpen={showProfile} 
+        onClose={() => setShowProfile(false)} 
+        user={currentUser} 
+        onUpdate={setCurrentUser} 
+      />
     </div>
   );
 }

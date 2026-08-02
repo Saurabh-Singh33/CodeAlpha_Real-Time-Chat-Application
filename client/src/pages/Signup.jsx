@@ -70,7 +70,7 @@ export default function Signup() {
         <div className="auth-mascot-container">
           <img src="/yeti.png" alt="Mascot" className="mascot-img" />
           <div className="mascot-text">
-            <h1>EXPLORE.</h1>
+            <h2>VARTACONNECT</h2>
             <h1>LEARN. GROW.</h1>
           </div>
         </div>

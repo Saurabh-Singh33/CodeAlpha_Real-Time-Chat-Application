@@ -87,15 +87,15 @@ export default function Room() {
     if (!socket || !user || isValidating || roomError) return;
     
     // Request media access
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       .then(currentStream => {
         setStream(currentStream);
         streamRef.current = currentStream;
-        socket.emit('join-room', roomId, user.username);
+        socket.emit('join-room', roomId, user.name || user.username);
       })
       .catch(err => {
         console.warn('Media access error, joining audio/video fallback', err);
-        socket.emit('join-room', roomId, user.username);
+        socket.emit('join-room', roomId, user.name || user.username);
       });
       
     socket.on('room-users', (users) => {
@@ -269,7 +269,7 @@ export default function Room() {
           email: inviteInput.trim(),
           roomId,
           roomLink: window.location.href,
-          inviterName: user?.username
+          inviterName: user?.name || user?.username
         })
       });
       
@@ -448,10 +448,10 @@ export default function Room() {
               {/* You */}
               <div style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.85rem', border: '1px solid var(--border-glass)' }}>
                 <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-indigo), var(--accent-violet))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.95rem' }}>
-                  {user?.username?.charAt(0).toUpperCase()}
+                  {(user?.name || user?.username || 'U').charAt(0).toUpperCase()}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{user?.username} (You)</div>
+                  <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{user?.name || user?.username} (You)</div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--accent-emerald)' }}>Host / Active</div>
                 </div>
               </div>

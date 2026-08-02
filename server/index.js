@@ -3,13 +3,23 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/auth');
-const { createUser, getUserByUsername, createRoom, getRoom } = require('./db');
+const Room = require('./models/Room');
+const connectDB = require('./config/db');
 const { sendMeetingInvite } = require('./mailer');
 
 const app = express();
-app.use(cors());
+
+// Connect to MongoDB
+connectDB();
+
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -40,7 +50,10 @@ app.post('/api/rooms', async (req, res) => {
   const { roomId } = req.body;
   if (!roomId) return res.status(400).json({ error: 'Room ID is required' });
   try {
-    await createRoom(roomId);
+    let room = await Room.findOne({ id: roomId });
+    if (!room) {
+      room = await Room.create({ id: roomId });
+    }
     res.json({ success: true, roomId });
   } catch (err) {
     console.error('Error creating room:', err);
@@ -52,7 +65,7 @@ app.post('/api/rooms', async (req, res) => {
 app.get('/api/rooms/:roomId', async (req, res) => {
   const { roomId } = req.params;
   try {
-    const room = await getRoom(roomId);
+    const room = await Room.findOne({ id: roomId });
     if (room || (rooms[roomId] && Object.keys(rooms[roomId]).length > 0)) {
       res.json({ exists: true });
     } else {

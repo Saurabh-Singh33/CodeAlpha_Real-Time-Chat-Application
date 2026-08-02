@@ -2,11 +2,11 @@ const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const sendMeetingInvite = async ({ toEmail, roomId, roomLink, inviterName }) => {
-  const gmailUser = process.env.GMAIL_USER;
-  const gmailPass = process.env.GMAIL_APP_PASS;
+  const gmailUser = process.env.SMTP_USER;
+  const gmailPass = process.env.SMTP_PASSWORD;
 
-  if (!gmailUser || !gmailPass || gmailUser.includes('your_gmail_address') || gmailPass.includes('your_gmail_16_character')) {
-    throw new Error('Gmail SMTP credentials not configured. Please add your GMAIL_USER and GMAIL_APP_PASS in server/.env');
+  if (!gmailUser || !gmailPass) {
+    throw new Error('SMTP credentials not configured. Please add your SMTP_USER and SMTP_PASSWORD in server/.env');
   }
 
   const transporter = nodemailer.createTransport({

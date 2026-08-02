@@ -237,10 +237,138 @@ const getMe = async (req, res) => {
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    res.status(200).json({ success: true, user: { id: user._id, name: user.name, email: user.email } });
+    res.status(200).json({ 
+      success: true, 
+      user: { 
+        id: user._id, 
+        name: user.name, 
+        email: user.email,
+        mobileNumber: user.mobileNumber,
+        dob: user.dob,
+        sex: user.sex
+      } 
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
-module.exports = { signup, verifyOtp, resendOtp, login, googleAuth, logout, getMe };
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      // For security, do not reveal if email exists
+      return res.status(200).json({ success: true, message: 'If the email exists, a reset OTP has been sent.' });
+    }
+
+    if (user.provider === 'google' && !user.password) {
+      return res.status(400).json({ success: false, message: 'This account uses Google Login. Please sign in with Google.' });
+    }
+
+    const rawOtp = crypto.randomInt(100000, 999999).toString();
+    const hashedOtp = await bcrypt.hash(rawOtp, 10);
+    
+    await Otp.deleteMany({ email });
+    await Otp.create({ email, hashedOtp });
+
+    const emailText = `Hello ${user.name},\n\nYour password reset OTP is:\n\n${rawOtp}\n\nThis OTP will expire in 10 minutes.\n\nIf you did not request a password reset, please ignore this email.`;
+    await sendEmail({
+      to: email,
+      subject: 'Password Reset - VartaConnect',
+      text: emailText
+    });
+
+    res.status(200).json({ success: true, message: 'If the email exists, a reset OTP has been sent.' });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+const verifyResetOtp = async (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) return res.status(400).json({ success: false, message: 'Email and OTP are required' });
+
+  try {
+    const otpRecord = await Otp.findOne({ email });
+    if (!otpRecord) return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+
+    const isValid = await bcrypt.compare(otp, otpRecord.hashedOtp);
+    if (!isValid) return res.status(400).json({ success: false, message: 'Invalid OTP' });
+
+    res.status(200).json({ success: true, message: 'OTP verified. You can now reset your password.' });
+  } catch (error) {
+    console.error('Verify reset OTP error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  const { email, otp, newPassword, confirmPassword } = req.body;
+  if (!email || !otp || !newPassword || !confirmPassword) {
+    return res.status(400).json({ success: false, message: 'All fields are required' });
+  }
+  if (newPassword !== confirmPassword) {
+    return res.status(400).json({ success: false, message: 'Passwords do not match' });
+  }
+
+  try {
+    const otpRecord = await Otp.findOne({ email });
+    if (!otpRecord) return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+
+    const isValid = await bcrypt.compare(otp, otpRecord.hashedOtp);
+    if (!isValid) return res.status(400).json({ success: false, message: 'Invalid OTP' });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ success: false, message: 'User not found' });
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    
+    user.password = hashedPassword;
+    await user.save();
+    await Otp.deleteMany({ email });
+
+    res.status(200).json({ success: true, message: 'Password reset successful. Please login.' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+const updateProfile = async (req, res) => {
+  const { name, mobileNumber, dob, sex } = req.body;
+  
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    if (name) user.name = name;
+    if (mobileNumber !== undefined) user.mobileNumber = mobileNumber;
+    if (dob !== undefined) user.dob = dob;
+    if (sex !== undefined) user.sex = sex;
+
+    await user.save();
+    
+    res.status(200).json({ 
+      success: true, 
+      user: { 
+        id: user._id, 
+        name: user.name, 
+        email: user.email,
+        mobileNumber: user.mobileNumber,
+        dob: user.dob,
+        sex: user.sex
+      },
+      message: 'Profile updated successfully'
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+module.exports = { signup, verifyOtp, resendOtp, login, googleAuth, logout, getMe, forgotPassword, verifyResetOtp, resetPassword, updateProfile };

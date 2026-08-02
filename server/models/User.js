@@ -25,6 +25,19 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  mobileNumber: {
+    type: String,
+    default: '',
+  },
+  dob: {
+    type: String,
+    default: '',
+  },
+  sex: {
+    type: String,
+    enum: ['Male', 'Female', 'Other', ''],
+    default: '',
+  },
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);

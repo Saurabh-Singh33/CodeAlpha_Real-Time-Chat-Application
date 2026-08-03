@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { X } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
 
-export default function Signup() {
+export default function Signup({ isModal, onSuccess }) {
   const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,6 +34,7 @@ export default function Signup() {
       });
       const data = await res.json();
       if (res.ok) {
+        if (isModal && onSuccess) onSuccess();
         navigate('/verify-otp', { state: { email: formData.email } });
       } else {
         setError(data.message || 'Signup failed');
@@ -53,7 +55,11 @@ export default function Signup() {
         body: JSON.stringify({ idToken: credentialResponse.credential })
       });
       if (res.ok) {
-        window.location.href = '/';
+        if (isModal && onSuccess) {
+          onSuccess();
+        } else {
+          window.location.href = '/';
+        }
       } else {
         const data = await res.json();
         setError(data.message || 'Google signup failed');
@@ -64,20 +70,36 @@ export default function Signup() {
   };
 
   return (
-    <div className="auth-page-container">
-      <div className="glass-auth-card">
+    <div className={isModal ? "" : "auth-page-container"} style={isModal ? { background: 'none', padding: 0, minHeight: 'auto' } : {}}>
+      {!isModal && (
+        <button 
+          onClick={() => navigate('/')} 
+          style={{ position: 'absolute', top: '2rem', left: '2rem', background: '#FFFFFF', border: '1px solid #dadce0', padding: '0.5rem 1rem', borderRadius: '24px', cursor: 'pointer', fontWeight: '500', color: '#5F6368', display: 'flex', alignItems: 'center', gap: '0.5rem', zIndex: 100 }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Back to Home
+        </button>
+      )}
+      <div className="glass-auth-card" style={isModal ? { boxShadow: 'none', border: 'none', maxWidth: '750px', margin: '0 auto' } : { maxWidth: '750px', margin: '0 auto' }}>
         {/* Left Side: Mascot Image */}
         <div className="auth-mascot-container">
-          <img src="/yeti.png" alt="Mascot" className="mascot-img" />
-          <div className="mascot-text">
-            <h2>VARTACONNECT</h2>
-            <h1>LEARN. GROW.</h1>
+          <img src="https://images.unsplash.com/photo-1573164713988-8665fc963095?q=80&w=2938&auto=format&fit=crop" alt="Workspace" className="mascot-img" />
+          <div className="mascot-text" style={{ left: '40px', bottom: '40px', paddingRight: '20px' }}>
+            <h2 style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.6)' }}>VARTACONNECT</h2>
+            <h1 style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.6)' }}>LEARN. GROW.</h1>
           </div>
         </div>
 
         {/* Right Side: Form */}
-        <div className="auth-form-container">
-          <div className="auth-header">
+        <div className="auth-form-container" style={{ position: 'relative', padding: '2.5rem' }}>
+          <button 
+            onClick={() => { if(isModal && onSuccess) { onSuccess(); } else { navigate('/'); } }} 
+            style={{ position: 'absolute', top: '20px', right: '20px', background: 'transparent', border: 'none', cursor: 'pointer' }}
+          >
+            <X size={24} color="#5F6368" />
+          </button>
+          
+          <div className="auth-header" style={{ marginBottom: '1.5rem' }}>
             <div className="logo-placeholder">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10"></circle>
@@ -87,34 +109,34 @@ export default function Signup() {
               </svg>
             </div>
             <h2>VARTACONNECT</h2>
-            <h3>CREATE ACCOUNT</h3>
+            <h3 style={{ fontSize: '1.5rem' }}>CREATE ACCOUNT</h3>
             <p>Enter your details to create an account</p>
           </div>
 
           {error && <div className="error-message">{error}</div>}
 
           <form onSubmit={handleSubmit} className="glass-form">
-            <div className="form-group">
-              <label>Name</label>
-              <input type="text" name="name" placeholder="Enter your name" value={formData.name} onChange={handleChange} required />
+            <div className="form-group" style={{ marginBottom: '0.8rem' }}>
+              <label style={{ fontSize: '0.8rem', marginBottom: '0.2rem' }}>Name</label>
+              <input type="text" name="name" placeholder="Enter your name" value={formData.name} onChange={handleChange} required style={{ padding: '0.6rem 1rem' }} />
             </div>
             
-            <div className="form-group">
-              <label>Email</label>
-              <input type="email" name="email" placeholder="Enter your email" value={formData.email} onChange={handleChange} required />
+            <div className="form-group" style={{ marginBottom: '0.8rem' }}>
+              <label style={{ fontSize: '0.8rem', marginBottom: '0.2rem' }}>Email</label>
+              <input type="email" name="email" placeholder="Enter your email" value={formData.email} onChange={handleChange} required style={{ padding: '0.6rem 1rem' }} />
             </div>
 
-            <div className="form-group">
-              <label>Password</label>
-              <input type="password" name="password" placeholder="Enter your password" value={formData.password} onChange={handleChange} required />
+            <div className="form-group" style={{ marginBottom: '0.8rem' }}>
+              <label style={{ fontSize: '0.8rem', marginBottom: '0.2rem' }}>Password</label>
+              <input type="password" name="password" placeholder="Enter your password" value={formData.password} onChange={handleChange} required style={{ padding: '0.6rem 1rem' }} />
             </div>
 
-            <div className="form-group">
-              <label>Confirm Password</label>
-              <input type="password" name="confirmPassword" placeholder="Confirm your password" value={formData.confirmPassword} onChange={handleChange} required />
+            <div className="form-group" style={{ marginBottom: '1.2rem' }}>
+              <label style={{ fontSize: '0.8rem', marginBottom: '0.2rem' }}>Confirm Password</label>
+              <input type="password" name="confirmPassword" placeholder="Confirm your password" value={formData.confirmPassword} onChange={handleChange} required style={{ padding: '0.6rem 1rem' }} />
             </div>
 
-            <button type="submit" className="primary-btn" disabled={loading}>
+            <button type="submit" className="primary-btn" disabled={loading} style={{ padding: '0.7rem' }}>
               {loading ? 'Creating...' : 'Sign Up'}
             </button>
 

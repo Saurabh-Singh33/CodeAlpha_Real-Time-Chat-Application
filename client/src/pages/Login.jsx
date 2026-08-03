@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import { AuthContext } from '../context/AuthContext';
 
-export default function Login() {
+export default function Login({ isModal, onSuccess }) {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,10 +30,14 @@ export default function Login() {
       });
       const data = await res.json();
       if (res.ok) {
-        await checkAuth(); // Refetches me route and sets user context
-        navigate('/');
+        await checkAuth(); // Logs in the user via HTTP-only cookie
+        if (isModal && onSuccess) {
+          onSuccess();
+        } else {
+          navigate('/');
+        }
       } else {
-        if (data.needsVerification) {
+        if (res.status === 403 && data.needsVerification) {
           navigate('/verify-otp', { state: { email: formData.email } });
         } else {
           setError(data.message || 'Login failed');
@@ -55,8 +59,11 @@ export default function Login() {
         body: JSON.stringify({ idToken: credentialResponse.credential })
       });
       if (res.ok) {
-        await checkAuth();
-        navigate('/');
+        if (isModal && onSuccess) {
+          onSuccess();
+        } else {
+          window.location.href = '/';
+        }
       } else {
         const data = await res.json();
         setError(data.message || 'Google login failed');
@@ -67,11 +74,20 @@ export default function Login() {
   };
 
   return (
-    <div className="auth-page-container">
-      <div className="glass-auth-card">
+    <div className={isModal ? "" : "auth-page-container"} style={isModal ? { background: 'none', padding: 0, minHeight: 'auto' } : {}}>
+      {!isModal && (
+        <button 
+          onClick={() => navigate('/')} 
+          style={{ position: 'absolute', top: '2rem', left: '2rem', background: '#FFFFFF', border: '1px solid #dadce0', padding: '0.5rem 1rem', borderRadius: '24px', cursor: 'pointer', fontWeight: '500', color: '#5F6368', display: 'flex', alignItems: 'center', gap: '0.5rem', zIndex: 100 }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Back to Home
+        </button>
+      )}
+      <div className="glass-auth-card" style={isModal ? { boxShadow: 'none', border: 'none' } : {}}>
         {/* Left Side: Mascot Image (Reusing for consistency if requested, or can be hidden via CSS for login) */}
         <div className="auth-mascot-container">
-          <img src="/yeti.png" alt="Mascot" className="mascot-img" />
+          <img src="https://images.unsplash.com/photo-1573164713619-24c71f419ea8?q=80&w=2938&auto=format&fit=crop" alt="Conferencing" className="mascot-img" />
           <div className="mascot-text">
             <h1>WELCOME.</h1>
             <h1>BACK.</h1>

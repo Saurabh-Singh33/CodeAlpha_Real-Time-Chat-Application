@@ -63,9 +63,13 @@ export default function VerifyOtp() {
     }
   };
 
+  const [resendLoading, setResendLoading] = useState(false);
+
   const handleResend = async () => {
+    if (resendLoading) return;
     setError('');
     setMessage('');
+    setResendLoading(true);
     try {
       const res = await fetch(`${serverUrl}/api/auth/resend-otp`, {
         method: 'POST',
@@ -81,6 +85,8 @@ export default function VerifyOtp() {
       }
     } catch (err) {
       setError('Cannot connect to server.');
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -129,7 +135,7 @@ export default function VerifyOtp() {
           </form>
 
           <div className="auth-footer">
-            <p>Didn't receive the code? <button type="button" onClick={handleResend} className="text-btn">Resend OTP</button></p>
+            <p>Didn't receive the code? <button type="button" onClick={handleResend} className="text-btn" disabled={resendLoading}>{resendLoading ? 'Sending...' : 'Resend OTP'}</button></p>
             <p><Link to="/login">Back to Login</Link></p>
           </div>
         </div>

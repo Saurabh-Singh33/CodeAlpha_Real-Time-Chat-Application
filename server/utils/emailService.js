@@ -1,6 +1,6 @@
 const nodemailer = require('nodemailer');
 
-const sendEmail = async ({ to, subject, text }) => {
+const sendEmail = async ({ to, subject, text, html }) => {
   try {
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -13,10 +13,11 @@ const sendEmail = async ({ to, subject, text }) => {
     });
 
     const mailOptions = {
-      from: process.env.SMTP_FROM,
+      from: `"VartaConnect" <${process.env.SMTP_FROM}>`,
       to,
       subject,
       text,
+      html,
     };
 
     const info = await transporter.sendMail(mailOptions);

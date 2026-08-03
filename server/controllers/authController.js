@@ -66,10 +66,24 @@ const signup = async (req, res) => {
     });
 
     const emailText = `Hello ${name},\n\nYour verification OTP is:\n\n${rawOtp}\n\nThis OTP will expire in 10 minutes.\n\nIf you did not request this, you can ignore this email.`;
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+        <h2 style="color: #1A73E8; text-align: center;">VartaConnect</h2>
+        <p>Hello <strong>${name}</strong>,</p>
+        <p>Your verification OTP is:</p>
+        <div style="background-color: #F8F9FA; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; border-radius: 8px; margin: 20px 0;">
+          ${rawOtp}
+        </div>
+        <p style="color: #5F6368; font-size: 14px;">This OTP will expire in 10 minutes.</p>
+        <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;" />
+        <p style="color: #80868B; font-size: 12px; text-align: center;">If you did not request this, you can safely ignore this email.</p>
+      </div>
+    `;
     await sendEmail({
       to: email,
       subject: 'Verify Your Account - VartaConnect',
-      text: emailText
+      text: emailText,
+      html: emailHtml
     });
 
     res.status(200).json({ success: true, message: 'OTP sent to email. Please verify.' });
@@ -136,10 +150,24 @@ const resendOtp = async (req, res) => {
     await Otp.create({ email, hashedOtp });
 
     const emailText = `Hello ${user.name},\n\nYour new verification OTP is:\n\n${rawOtp}\n\nThis OTP will expire in 10 minutes.\n\nIf you did not request this, you can ignore this email.`;
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+        <h2 style="color: #1A73E8; text-align: center;">VartaConnect</h2>
+        <p>Hello <strong>${user.name}</strong>,</p>
+        <p>Your new verification OTP is:</p>
+        <div style="background-color: #F8F9FA; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; border-radius: 8px; margin: 20px 0;">
+          ${rawOtp}
+        </div>
+        <p style="color: #5F6368; font-size: 14px;">This OTP will expire in 10 minutes.</p>
+        <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;" />
+        <p style="color: #80868B; font-size: 12px; text-align: center;">If you did not request this, you can safely ignore this email.</p>
+      </div>
+    `;
     await sendEmail({
       to: email,
       subject: 'Verify Your Account - VartaConnect',
-      text: emailText
+      text: emailText,
+      html: emailHtml
     });
 
     res.status(200).json({ success: true, message: 'OTP resent successfully' });
@@ -275,10 +303,24 @@ const forgotPassword = async (req, res) => {
     await Otp.create({ email, hashedOtp });
 
     const emailText = `Hello ${user.name},\n\nYour password reset OTP is:\n\n${rawOtp}\n\nThis OTP will expire in 10 minutes.\n\nIf you did not request a password reset, please ignore this email.`;
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+        <h2 style="color: #1A73E8; text-align: center;">VartaConnect</h2>
+        <p>Hello <strong>${user.name}</strong>,</p>
+        <p>Your password reset OTP is:</p>
+        <div style="background-color: #F8F9FA; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; border-radius: 8px; margin: 20px 0;">
+          ${rawOtp}
+        </div>
+        <p style="color: #5F6368; font-size: 14px;">This OTP will expire in 10 minutes.</p>
+        <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;" />
+        <p style="color: #80868B; font-size: 12px; text-align: center;">If you did not request a password reset, you can safely ignore this email.</p>
+      </div>
+    `;
     await sendEmail({
       to: email,
       subject: 'Password Reset - VartaConnect',
-      text: emailText
+      text: emailText,
+      html: emailHtml
     });
 
     res.status(200).json({ success: true, message: 'If the email exists, a reset OTP has been sent.' });

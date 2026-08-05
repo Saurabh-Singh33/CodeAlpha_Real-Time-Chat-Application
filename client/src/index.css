@@ -1332,3 +1332,49 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 1.5rem;
   box-shadow: 0 20px 40px rgba(0,0,0,0.1);
 }
+
+/* Modern Auth Buttons */
+.btn-modern-primary {
+  background-color: #1A73E8;
+  color: #FFFFFF !important;
+  border: none;
+  border-radius: 8px;
+  padding: 0 1.5rem;
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  box-sizing: border-box;
+}
+.btn-modern-primary:hover {
+  background-color: #1d4ed8;
+  box-shadow: 0 4px 14px rgba(26, 115, 232, 0.4);
+  transform: translateY(-1px);
+}
+.btn-modern-secondary {
+  background-color: #FFFFFF;
+  color: #1A73E8 !important;
+  border: 1.5px solid #1A73E8;
+  border-radius: 8px;
+  padding: 0 1.5rem;
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  box-sizing: border-box;
+}
+.btn-modern-secondary:hover {
+  background-color: #eff6ff;
+  border-color: #1d4ed8;
+  color: #1d4ed8 !important;
+}

@@ -75,29 +75,35 @@ export default function Contact() {
         padding: '1rem 2rem', backgroundColor: '#ffffff', borderBottom: '1px solid #e0e0e0',
         position: 'sticky', top: 0, zIndex: 10
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#1A73E8', fontWeight: '700', fontSize: '1.25rem' }}>
+        <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#1A73E8', fontWeight: '700', fontSize: '1.25rem', cursor: 'pointer' }}>
           <Video size={28} />
           <span>VartaConnect</span>
-        </div>
+        </Link>
         
         <nav style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-          <Link to="/" style={{ textDecoration: 'none', color: '#5f6368', fontWeight: '500', transition: 'color 0.2s', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-            Home <ChevronRight size={16} /> Contact
+          <div style={{ display: 'flex', gap: '1.5rem', marginRight: '1rem' }}>
+            <Link to="/about" style={{ textDecoration: 'none', color: '#5f6368', fontWeight: '500', transition: 'color 0.2s' }}>About</Link>
+            <Link to="/services" style={{ textDecoration: 'none', color: '#5f6368', fontWeight: '500', transition: 'color 0.2s' }}>Services</Link>
+            <Link to="/contact" style={{ textDecoration: 'none', color: '#5f6368', fontWeight: '500', transition: 'color 0.2s' }}>Contact Us</Link>
+          </div>
+          <Link to="/login" className="btn-modern-primary">
+            Sign in
           </Link>
-          <Link to="/services" style={{ textDecoration: 'none', color: '#5f6368', fontWeight: '500', transition: 'color 0.2s' }}>Services</Link>
-          <Link to="/about" style={{ textDecoration: 'none', color: '#5f6368', fontWeight: '500', transition: 'color 0.2s' }}>About</Link>
-          <Link to="/login" style={{ 
-            textDecoration: 'none', backgroundColor: '#1A73E8', color: '#ffffff', 
-            padding: '0.5rem 1.25rem', borderRadius: '6px', fontWeight: '500', transition: 'background-color 0.2s' 
-          }}>
-            Sign In
+          <Link to="/signup" className="btn-modern-secondary">
+            Sign up
           </Link>
         </nav>
       </header>
 
       {/* Main Content */}
-      <main style={{ flex: 1, backgroundColor: '#F8FAFC', padding: '4rem 2rem' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <main style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
+        <div style={{ padding: '1rem 2rem', backgroundColor: '#ffffff', borderBottom: '1px solid #e0e0e0', color: '#5f6368', fontSize: '0.9rem' }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <Link to="/" style={{ textDecoration: 'none', color: '#1A73E8', cursor: 'pointer' }}>Home</Link> <span style={{ margin: '0 0.5rem' }}>/</span> Contact Us
+          </div>
+        </div>
+        <div style={{ padding: '4rem 2rem' }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           
           <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
             <h1 style={{ fontSize: '3rem', fontWeight: '800', color: '#1A73E8', marginBottom: '1rem', letterSpacing: '-0.02em', fontFamily: '"Inter", "Roboto", sans-serif' }}>
@@ -192,7 +198,7 @@ export default function Contact() {
                     value={formData.name}
                     onChange={handleChange}
                     required
-                    placeholder="John Doe" 
+                    placeholder="Kailash kumawat" 
                     style={{ width: '100%', padding: '0.875rem', borderRadius: '8px', border: '1px solid #d2d6dc', fontSize: '1rem', outline: 'none' }} 
                   />
                 </div>
@@ -205,7 +211,7 @@ export default function Contact() {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    placeholder="john@example.com" 
+                    placeholder="kailash@example.com" 
                     style={{ width: '100%', padding: '0.875rem', borderRadius: '8px', border: '1px solid #d2d6dc', fontSize: '1rem', outline: 'none' }} 
                   />
                 </div>
@@ -281,6 +287,7 @@ export default function Contact() {
             </div>
           </div>
 
+          </div>
         </div>
       </main>
 

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { X, Info } from 'lucide-react';
 import Login from './Login';
 import Signup from './Signup';
@@ -7,16 +7,37 @@ import Signup from './Signup';
 export default function Landing() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showSignupModal, setShowSignupModal] = useState(false);
+  const [joinCode, setJoinCode] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.pathname === '/login' || location.state?.from) {
+      setShowLoginModal(true);
+    } else if (location.pathname === '/signup') {
+      setShowSignupModal(true);
+    }
+  }, [location.pathname, location.state]);
+
+  const handleJoin = (e) => {
+    e.preventDefault();
+    if (joinCode.trim()) {
+      let code = joinCode.trim();
+      if (code.includes('/room/')) {
+        code = code.split('/room/')[1];
+      }
+      navigate(`/room/${code}`);
+    }
+  };
 
   return (
     <div className="landing-container" style={{ background: '#FFFFFF', minHeight: '100vh', fontFamily: "'Google Sans', 'Inter', 'Roboto', sans-serif" }}>
       {/* Header */}
       <nav className="landing-nav" style={{ position: 'sticky', top: 0, zIndex: 100, padding: '1rem 3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FFFFFF', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)' }}>
         <div style={{ display: 'flex', alignItems: 'center', paddingLeft: '1rem' }}>
-          <div className="logo-placeholder" style={{ display: 'flex', alignItems: 'center', background: 'transparent' }}>
+          <Link to="/" className="logo-placeholder" style={{ display: 'flex', alignItems: 'center', background: 'transparent', textDecoration: 'none', cursor: 'pointer' }}>
             <span style={{ fontSize: '1.6rem', background: 'linear-gradient(135deg, #1A73E8 0%, #174ea6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: '800', letterSpacing: '-0.5px' }}>VartaConnect</span>
-          </div>
+          </Link>
         </div>
         
         <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
@@ -24,17 +45,16 @@ export default function Landing() {
             <Link to="/about" className="nav-link-item">About</Link>
             <Link to="/services" className="nav-link-item">Services</Link>
             <Link to="/contact" className="nav-link-item">Contact Us</Link>
-            <Link to="/ai-chatbot" className="nav-link-item">AI Chatbot</Link>
           </div>
           
           <button 
             onClick={() => setShowLoginModal(true)} 
-            style={{ background: '#1A73E8', color: '#FFFFFF', border: 'none', borderRadius: '4px', padding: '0.6rem 1.25rem', fontWeight: '500', cursor: 'pointer', fontSize: '0.95rem' }}>
+            className="btn-modern-primary">
             Sign in
           </button>
           <button 
             onClick={() => setShowSignupModal(true)} 
-            style={{ background: '#FFFFFF', color: '#1A73E8', border: '1px solid #dadce0', borderRadius: '4px', padding: '0.6rem 1.25rem', fontWeight: '500', cursor: 'pointer', fontSize: '0.95rem' }}>
+            className="btn-modern-secondary">
             Sign up
           </button>
         </div>
@@ -73,16 +93,18 @@ export default function Landing() {
           <div style={{ marginBottom: '2rem' }}>
             <h3 style={{ color: '#202124', fontSize: '1rem', fontWeight: '600', marginBottom: '1rem' }}>Join a meeting now</h3>
             
-            <div style={{ display: 'inline-flex', alignItems: 'center', background: '#F8F9FA', border: '1px solid #dadce0', borderRadius: '24px', padding: '0.25rem 0.25rem 0.25rem 1rem', minWidth: '350px' }}>
+            <form onSubmit={handleJoin} style={{ display: 'inline-flex', alignItems: 'center', background: '#F8F9FA', border: '1px solid #dadce0', borderRadius: '24px', padding: '0.25rem 0.25rem 0.25rem 1rem', minWidth: '350px' }}>
               <input 
                 type="text" 
                 placeholder="Enter a code or link" 
+                value={joinCode}
+                onChange={(e) => setJoinCode(e.target.value)}
                 style={{ flex: '1', border: 'none', outline: 'none', background: 'transparent', fontSize: '1rem', color: '#202124' }} 
               />
-              <button style={{ background: '#1A73E8', color: '#FFFFFF', border: 'none', borderRadius: '20px', padding: '0.6rem 1.5rem', fontWeight: '500', cursor: 'pointer', marginLeft: '0.5rem' }}>
+              <button type="submit" style={{ background: '#1A73E8', color: '#FFFFFF', border: 'none', borderRadius: '20px', padding: '0.6rem 1.5rem', fontWeight: '500', cursor: 'pointer', marginLeft: '0.5rem' }}>
                 Join
               </button>
-            </div>
+            </form>
             <Info size={18} color="#5F6368" style={{ marginLeft: '1rem', verticalAlign: 'middle' }} />
           </div>
 
@@ -138,7 +160,12 @@ export default function Landing() {
             <button onClick={() => setShowLoginModal(false)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'transparent', border: 'none', cursor: 'pointer', zIndex: 10 }}>
               <X size={24} color="#5F6368" />
             </button>
-            <Login isModal={true} onSuccess={() => setShowLoginModal(false)} />
+            <Login isModal={true} onSuccess={() => {
+              setShowLoginModal(false);
+              if (location.state?.from) {
+                navigate(location.state.from.pathname, { replace: true });
+              }
+            }} />
           </div>
         </div>
       )}

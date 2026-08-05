@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
@@ -20,8 +20,9 @@ import AiChatbotPage from './pages/AiChatbotPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useContext(AuthContext);
+  const location = useLocation();
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'white' }}>Loading...</div>;
-  if (!user) return <Navigate to="/" />;
+  if (!user) return <Navigate to="/" state={{ from: location }} replace />;
   return children;
 }
 

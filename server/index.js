@@ -7,7 +7,7 @@ const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/auth');
 const Room = require('./models/Room');
 const connectDB = require('./config/db');
-const { sendMeetingInvite } = require('./mailer');
+const { sendMeetingInvite, sendContactEmail } = require('./mailer');
 
 const app = express();
 
@@ -42,6 +42,23 @@ app.post('/api/rooms/invite', async (req, res) => {
   } catch (err) {
     console.error('Email invite error:', err.message);
     res.status(500).json({ error: err.message || 'Failed to send invite email' });
+  }
+});
+
+// API to handle contact form submission
+app.post('/api/contact', async (req, res) => {
+  const { name, email, subject, category, message } = req.body;
+  
+  if (!name || !email || !message) {
+    return res.status(400).json({ error: 'Name, Email, and Message are required' });
+  }
+
+  try {
+    await sendContactEmail({ name, email, subject, category, message });
+    res.json({ success: true, message: 'Message sent successfully' });
+  } catch (err) {
+    console.error('Contact email error:', err.message);
+    res.status(500).json({ error: 'Failed to send message. Please try again later.' });
   }
 });
 

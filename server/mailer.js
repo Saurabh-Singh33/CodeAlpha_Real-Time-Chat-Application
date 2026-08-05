@@ -83,4 +83,84 @@ const sendMeetingInvite = async ({ toEmail, roomId, roomLink, inviterName }) => 
   return info;
 };
 
-module.exports = { sendMeetingInvite };
+const sendContactEmail = async ({ name, email, subject, category, message }) => {
+  const gmailUser = process.env.SMTP_USER;
+  const gmailPass = process.env.SMTP_PASSWORD;
+
+  if (!gmailUser || !gmailPass) {
+    throw new Error('SMTP credentials not configured.');
+  }
+
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: gmailUser,
+      pass: gmailPass
+    }
+  });
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; color: #202124; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 32px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        h2 { color: #1A73E8; margin-top: 0; }
+        .field { margin-bottom: 16px; }
+        .label { font-size: 12px; font-weight: 600; color: #5f6368; text-transform: uppercase; letter-spacing: 0.5px; }
+        .value { font-size: 15px; font-weight: 500; color: #202124; margin-top: 4px; padding: 12px; background-color: #f1f3f4; border-radius: 8px; white-space: pre-wrap; }
+        .footer { margin-top: 32px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #5f6368; text-align: center; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h2>New Contact Request</h2>
+        
+        <div class="field">
+          <div class="label">Sender Name</div>
+          <div class="value">${name}</div>
+        </div>
+        
+        <div class="field">
+          <div class="label">Sender Email</div>
+          <div class="value">${email}</div>
+        </div>
+        
+        <div class="field">
+          <div class="label">Category</div>
+          <div class="value">${category}</div>
+        </div>
+        
+        <div class="field">
+          <div class="label">Subject</div>
+          <div class="value">${subject}</div>
+        </div>
+        
+        <div class="field">
+          <div class="label">Message</div>
+          <div class="value">${message}</div>
+        </div>
+        
+        <div class="footer">
+          VartaConnect System • Automated Contact Delivery
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const mailOptions = {
+    from: `"VartaConnect Contact" <${gmailUser}>`,
+    to: gmailUser, // send to the business inbox (using the configured SMTP user by default)
+    replyTo: email,
+    subject: `[${category}] ${subject} - from ${name}`,
+    html: htmlContent
+  };
+
+  const info = await transporter.sendMail(mailOptions);
+  return info;
+};
+
+module.exports = { sendMeetingInvite, sendContactEmail };

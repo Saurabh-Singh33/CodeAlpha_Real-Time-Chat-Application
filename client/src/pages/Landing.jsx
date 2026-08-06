@@ -164,6 +164,8 @@ export default function Landing() {
               setShowLoginModal(false);
               if (location.state?.from) {
                 navigate(location.state.from.pathname, { replace: true });
+              } else {
+                navigate('/dashboard');
               }
             }} />
           </div>
@@ -176,7 +178,14 @@ export default function Landing() {
             <button onClick={() => setShowSignupModal(false)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'transparent', border: 'none', cursor: 'pointer', zIndex: 10 }}>
               <X size={24} color="#5F6368" />
             </button>
-            <Signup isModal={true} onSuccess={() => setShowSignupModal(false)} />
+            <Signup isModal={true} onSuccess={() => {
+              setShowSignupModal(false);
+              if (location.state?.from) {
+                navigate(location.state.from.pathname, { replace: true });
+              } else {
+                navigate('/dashboard');
+              }
+            }} />
           </div>
         </div>
       )}

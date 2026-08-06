@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { X } from 'lucide-react';
+
 import { GoogleLogin } from '@react-oauth/google';
+import { AuthContext } from '../context/AuthContext';
 
 export default function Signup({ isModal, onSuccess }) {
   const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { checkAuth } = useContext(AuthContext);
   const navigate = useNavigate();
   
   const serverUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : `${window.location.protocol}//${window.location.hostname}:5000`;
@@ -55,10 +57,11 @@ export default function Signup({ isModal, onSuccess }) {
         body: JSON.stringify({ idToken: credentialResponse.credential })
       });
       if (res.ok) {
+        await checkAuth();
         if (isModal && onSuccess) {
           onSuccess();
         } else {
-          window.location.href = '/';
+          navigate('/dashboard');
         }
       } else {
         const data = await res.json();
@@ -71,34 +74,31 @@ export default function Signup({ isModal, onSuccess }) {
 
   return (
     <div className={isModal ? "" : "auth-page-container"} style={isModal ? { background: 'none', padding: 0, minHeight: 'auto' } : {}}>
-      {!isModal && (
-        <button 
-          onClick={() => navigate('/')} 
-          style={{ position: 'absolute', top: '2rem', left: '2rem', background: '#FFFFFF', border: '1px solid #dadce0', padding: '0.5rem 1rem', borderRadius: '24px', cursor: 'pointer', fontWeight: '500', color: '#5F6368', display: 'flex', alignItems: 'center', gap: '0.5rem', zIndex: 100 }}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-          Back to Home
-        </button>
-      )}
+
       <div className="glass-auth-card" style={isModal ? { boxShadow: 'none', border: 'none', maxWidth: '750px', margin: '0 auto' } : { maxWidth: '750px', margin: '0 auto' }}>
-        {/* Left Side: Mascot Image */}
+        {/* Left Side: Mascot Image with Back Button */}
         <div className="auth-mascot-container">
-          <img src="https://images.unsplash.com/photo-1573164713988-8665fc963095?q=80&w=2938&auto=format&fit=crop" alt="Workspace" className="mascot-img" />
-          <div className="mascot-text" style={{ left: '40px', bottom: '40px', paddingRight: '20px' }}>
-            <h2 style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.6)' }}>VARTACONNECT</h2>
-            <h1 style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.6)' }}>LEARN. GROW.</h1>
+          <button 
+            onClick={() => { if(isModal && onSuccess) { onSuccess(); } else { window.location.href = '/'; } }} 
+            style={{ position: 'absolute', top: '1.5rem', left: '1.5rem', background: 'rgba(255, 255, 255, 0.9)', border: 'none', padding: '0.5rem 1rem', borderRadius: '20px', cursor: 'pointer', fontWeight: '600', color: '#1A73E8', display: 'flex', alignItems: 'center', gap: '0.5rem', zIndex: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Back to Home
+          </button>
+          
+          <img src="/man_laptop_desk.png" alt="Professional working at desk" className="mascot-img" />
+          
+          {/* Subtle dark gradient overlay to ensure text is readable */}
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '40%', background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)' }}></div>
+
+          <div className="mascot-text" style={{ left: '40px', bottom: '40px', paddingRight: '20px', zIndex: 5 }}>
+            <h2 style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.6)', color: 'white' }}>VARTACONNECT</h2>
+            <h1 style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.6)', color: 'white' }}>LEARN. GROW.</h1>
           </div>
         </div>
 
         {/* Right Side: Form */}
         <div className="auth-form-container" style={{ position: 'relative', padding: '2.5rem' }}>
-          <button 
-            onClick={() => { if(isModal && onSuccess) { onSuccess(); } else { navigate('/'); } }} 
-            style={{ position: 'absolute', top: '20px', right: '20px', background: 'transparent', border: 'none', cursor: 'pointer' }}
-          >
-            <X size={24} color="#5F6368" />
-          </button>
-          
           <div className="auth-header" style={{ marginBottom: '1.5rem' }}>
             <div className="logo-placeholder">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

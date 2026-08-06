@@ -34,7 +34,7 @@ export default function Login({ isModal, onSuccess }) {
         if (isModal && onSuccess) {
           onSuccess();
         } else {
-          navigate('/');
+          navigate('/dashboard');
         }
       } else {
         if (res.status === 403 && data.needsVerification) {
@@ -59,10 +59,11 @@ export default function Login({ isModal, onSuccess }) {
         body: JSON.stringify({ idToken: credentialResponse.credential })
       });
       if (res.ok) {
+        await checkAuth();
         if (isModal && onSuccess) {
           onSuccess();
         } else {
-          window.location.href = '/';
+          navigate('/dashboard');
         }
       } else {
         const data = await res.json();
@@ -75,20 +76,24 @@ export default function Login({ isModal, onSuccess }) {
 
   return (
     <div className={isModal ? "" : "auth-page-container"} style={isModal ? { background: 'none', padding: 0, minHeight: 'auto' } : {}}>
-      {!isModal && (
-        <button 
-          onClick={() => navigate('/')} 
-          style={{ position: 'absolute', top: '2rem', left: '2rem', background: '#FFFFFF', border: '1px solid #dadce0', padding: '0.5rem 1rem', borderRadius: '24px', cursor: 'pointer', fontWeight: '500', color: '#5F6368', display: 'flex', alignItems: 'center', gap: '0.5rem', zIndex: 100 }}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-          Back to Home
-        </button>
-      )}
+
       <div className="glass-auth-card" style={isModal ? { boxShadow: 'none', border: 'none' } : {}}>
-        {/* Left Side: Mascot Image (Reusing for consistency if requested, or can be hidden via CSS for login) */}
+        {/* Left Side: Mascot Image with Back Button */}
         <div className="auth-mascot-container">
-          <img src="https://images.unsplash.com/photo-1573164713619-24c71f419ea8?q=80&w=2938&auto=format&fit=crop" alt="Conferencing" className="mascot-img" />
-          <div className="mascot-text">
+          <button 
+            onClick={() => { if(isModal && onSuccess) { onSuccess(); } else { window.location.href = '/'; } }} 
+            style={{ position: 'absolute', top: '1.5rem', left: '1.5rem', background: 'rgba(255, 255, 255, 0.9)', border: 'none', padding: '0.5rem 1rem', borderRadius: '20px', cursor: 'pointer', fontWeight: '600', color: '#1A73E8', display: 'flex', alignItems: 'center', gap: '0.5rem', zIndex: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Back to Home
+          </button>
+          
+          <img src="/man_laptop_desk.png" alt="Professional working at desk" className="mascot-img" />
+          
+          {/* Subtle dark gradient overlay to ensure text is readable */}
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '40%', background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)' }}></div>
+
+          <div className="mascot-text" style={{ zIndex: 5 }}>
             <h1>WELCOME.</h1>
             <h1>BACK.</h1>
           </div>

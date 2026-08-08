@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
-import { ThemeProvider } from './context/ThemeContext';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import VerifyOtp from './pages/VerifyOtp';
@@ -45,7 +44,6 @@ function App() {
 
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
-      <ThemeProvider>
         <AuthProvider>
           <SocketProvider>
             <BrowserRouter>
@@ -75,7 +73,6 @@ function App() {
             </BrowserRouter>
           </SocketProvider>
         </AuthProvider>
-      </ThemeProvider>
     </GoogleOAuthProvider>
   );
 }

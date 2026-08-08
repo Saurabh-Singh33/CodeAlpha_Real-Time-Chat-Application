@@ -1,8 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { ThemeContext } from '../context/ThemeContext';
-import { Video, LogOut, Copy, Check, X, PlusCircle, Link as LinkIcon, Shield, Users, Sun, Moon } from 'lucide-react';
+import { Video, LogOut, Copy, Check, X, PlusCircle, Link as LinkIcon, Shield, Users } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import ProfilePanel from '../components/ProfilePanel';
 
@@ -18,7 +17,6 @@ export default function Dashboard() {
   const [showProfile, setShowProfile] = useState(false);
   
   const { user, logout } = useContext(AuthContext);
-  const { theme, toggleTheme } = useContext(ThemeContext);
   const [currentUser, setCurrentUser] = useState(user);
 
   useEffect(() => {
@@ -115,9 +113,6 @@ export default function Dashboard() {
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-          <button className="btn-icon" onClick={toggleTheme} title="Toggle Theme" style={{ width: '40px', height: '40px' }}>
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }} onClick={() => setShowProfile(true)}>
             <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-indigo), var(--accent-cyan))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.9rem', color: 'white' }}>

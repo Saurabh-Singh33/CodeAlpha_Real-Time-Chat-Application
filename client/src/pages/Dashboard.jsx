@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Video, LogOut, Copy, Check, X, PlusCircle, Link as LinkIcon, Shield, Users } from 'lucide-react';
+import { Video, LogOut, Copy, Check, X, PlusCircle, Link as LinkIcon, Shield, Users, Bell, Calendar } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import ProfilePanel from '../components/ProfilePanel';
 
@@ -113,6 +113,9 @@ export default function Dashboard() {
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+          <button className="btn-icon" title="Notifications" style={{ width: '40px', height: '40px' }}>
+            <Bell size={18} />
+          </button>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }} onClick={() => setShowProfile(true)}>
             <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-indigo), var(--accent-cyan))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.9rem', color: 'white' }}>
@@ -126,18 +129,37 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <div className="dashboard-hero">
-        <h1 className="dashboard-title">Premium Video Meetings for Everyone</h1>
-        <p className="dashboard-desc">
+      <div className="dashboard-hero" style={{ position: 'relative' }}>
+        {/* Ambient Background Glow */}
+        <div style={{
+          position: 'absolute',
+          top: '30%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '800px',
+          height: '800px',
+          background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(0,0,0,0) 70%)',
+          pointerEvents: 'none',
+          zIndex: 0
+        }}></div>
+
+        <h1 className="dashboard-title" style={{ fontFamily: '"Inter", "Roboto", sans-serif', zIndex: 1, position: 'relative' }}>Premium Video Meetings for Everyone</h1>
+        <p className="dashboard-desc" style={{ zIndex: 1, position: 'relative' }}>
           Connect, collaborate, and share with real-time video, interactive whiteboard, instant chat, and crystal clear screen sharing.
         </p>
 
-        <div className="glass-panel" style={{ padding: '2.5rem', width: '100%', maxWidth: '520px', margin: '0 auto' }}>
+        <div className="glass-panel" style={{ padding: '2.5rem', width: '100%', maxWidth: '520px', margin: '0 auto', zIndex: 1, position: 'relative' }}>
           <button 
             className="btn btn-primary" 
             onClick={handleCreate} 
             disabled={isCreating}
-            style={{ width: '100%', padding: '1rem', fontSize: '1.05rem', marginBottom: '1.75rem' }}
+            style={{ 
+              width: '100%', 
+              padding: '1rem', 
+              fontSize: '1.05rem', 
+              marginBottom: '1.75rem',
+              boxShadow: '0 0 20px rgba(99, 102, 241, 0.4)'
+            }}
           >
             <PlusCircle size={22} />
             {isCreating ? 'Generating Room...' : 'New Instant Meeting'}
@@ -162,29 +184,86 @@ export default function Dashboard() {
           </div>
           
           <form onSubmit={handleJoin} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <div style={{ display: 'flex', gap: '0.6rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', background: 'var(--input-bg)', border: '1px solid var(--border-glass-strong)', borderRadius: '24px', overflow: 'hidden' }}>
               <div style={{ position: 'relative', flex: 1 }}>
                 <input 
                   type="text" 
-                  className="form-control" 
                   placeholder="Enter Meeting ID or Link"
                   value={roomIdInput}
                   onChange={e => setRoomIdInput(e.target.value)}
-                  style={{ width: '100%', paddingLeft: '2.5rem' }}
+                  style={{ 
+                    width: '100%', 
+                    padding: '1.1rem 1rem 1.1rem 2.8rem', 
+                    background: 'transparent', 
+                    border: 'none', 
+                    color: 'var(--text-primary)', 
+                    outline: 'none', 
+                    fontSize: '1rem' 
+                  }}
                   required
                 />
-                <LinkIcon size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                <LinkIcon size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               </div>
-              <button type="submit" className="btn btn-secondary" disabled={isJoining} style={{ padding: '0 1.5rem', fontWeight: '600' }}>
+              <button 
+                type="submit" 
+                disabled={isJoining} 
+                style={{ 
+                  padding: '1.1rem 2rem', 
+                  background: 'rgba(255,255,255,0.1)', 
+                  color: 'white', 
+                  border: 'none', 
+                  fontWeight: '600', 
+                  cursor: isJoining ? 'not-allowed' : 'pointer', 
+                  transition: 'background 0.2s' 
+                }} 
+                onMouseOver={e => !isJoining && (e.currentTarget.style.background = 'rgba(255,255,255,0.15)')} 
+                onMouseOut={e => !isJoining && (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
+              >
                 {isJoining ? 'Verifying...' : 'Join'}
               </button>
             </div>
-            {joinError && <div style={{ color: 'var(--accent-rose)', fontSize: '0.85rem', textAlign: 'left', marginTop: '0.2rem' }}>{joinError}</div>}
+            {joinError && <div style={{ color: 'var(--accent-rose)', fontSize: '0.85rem', textAlign: 'left', marginTop: '0.2rem', paddingLeft: '1rem' }}>{joinError}</div>}
           </form>
         </div>
 
+        {/* Your Schedule Section */}
+        <div style={{ width: '100%', maxWidth: '850px', marginTop: '3.5rem', zIndex: 1, position: 'relative' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', padding: '0 0.5rem' }}>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Calendar size={22} color="var(--accent-indigo)" />
+              Your Schedule
+            </h2>
+            <span style={{ color: 'var(--accent-indigo)', fontSize: '0.9rem', cursor: 'pointer', fontWeight: '600' }}>View All</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem' }}>
+            
+            <div className="glass-panel" style={{ padding: '1.5rem', textAlign: 'left', borderTop: '4px solid var(--accent-indigo)', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, right: 0, padding: '1rem' }}>
+                <span style={{ background: 'rgba(99, 102, 241, 0.2)', color: '#818cf8', padding: '4px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: '700' }}>UPCOMING</span>
+              </div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: '600', letterSpacing: '0.5px' }}>TODAY, 2:00 PM</div>
+              <h3 style={{ fontSize: '1.15rem', marginBottom: '0.25rem', color: 'var(--text-primary)' }}>Weekly Team Sync</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Product & Engineering</p>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button className="btn btn-primary" style={{ flex: 1, padding: '0.6rem 1rem', fontSize: '0.9rem' }}>Join Now</button>
+                <button className="btn btn-secondary" style={{ padding: '0.6rem 1rem', fontSize: '0.9rem' }}>Details</button>
+              </div>
+            </div>
+
+            <div className="glass-panel" style={{ padding: '1.5rem', textAlign: 'left', borderTop: '4px solid var(--accent-emerald)', opacity: 0.9 }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: '600', letterSpacing: '0.5px' }}>TOMORROW, 10:30 AM</div>
+              <h3 style={{ fontSize: '1.15rem', marginBottom: '0.25rem', color: 'var(--text-primary)' }}>Design Review</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>UI/UX Team</p>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button className="btn btn-secondary" style={{ flex: 1, padding: '0.6rem 1rem', fontSize: '0.9rem' }}>Details</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
         {/* Feature Cards Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', maxWidth: '850px', width: '100%', marginTop: '3.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', maxWidth: '850px', width: '100%', marginTop: '3.5rem', zIndex: 1, position: 'relative' }}>
           <div className="glass-panel" style={{ padding: '1.5rem', textAlign: 'left' }}>
             <div style={{ background: 'rgba(99, 102, 241, 0.15)', padding: '10px', borderRadius: '12px', width: 'fit-content', color: 'var(--accent-indigo)', marginBottom: '1rem' }}>
               <Video size={24} />

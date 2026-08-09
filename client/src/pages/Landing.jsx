@@ -31,7 +31,27 @@ export default function Landing() {
   };
 
   return (
-    <div className="landing-container" style={{ background: '#FFFFFF', minHeight: '100vh', fontFamily: "'Google Sans', 'Inter', 'Roboto', sans-serif" }}>
+    <div className="landing-container" style={{ background: '#FFFFFF', minHeight: '100vh', fontFamily: "'Inter', 'Roboto', sans-serif" }}>
+      <style>
+        {`
+          .btn-glow-blue {
+            transition: all 0.2s ease;
+            box-shadow: 0 0 15px rgba(26, 115, 232, 0.25);
+          }
+          .btn-glow-blue:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(26, 115, 232, 0.4);
+          }
+          .btn-outline-glow {
+            transition: all 0.2s ease;
+          }
+          .btn-outline-glow:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(26, 115, 232, 0.15);
+            background: rgba(26, 115, 232, 0.04) !important;
+          }
+        `}
+      </style>
       {/* Header */}
       <nav className="landing-nav" style={{ position: 'sticky', top: 0, zIndex: 100, padding: '1rem 3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FFFFFF', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)' }}>
         <div style={{ display: 'flex', alignItems: 'center', paddingLeft: '1rem' }}>
@@ -61,30 +81,45 @@ export default function Landing() {
       </nav>
 
       {/* Main Content */}
-      <main className="landing-hero" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4rem 6rem', maxWidth: '1400px', margin: '0 auto' }}>
+      <main className="landing-hero" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4rem 6rem', maxWidth: '1400px', margin: '0 auto', position: 'relative' }}>
+        
+        {/* Soft Light-Blue Radial Gradient Glow */}
+        <div style={{
+          position: 'absolute',
+          top: '40%',
+          left: '30%',
+          transform: 'translate(-50%, -50%)',
+          width: '900px',
+          height: '900px',
+          background: 'radial-gradient(circle, rgba(26,115,232,0.08) 0%, rgba(26,115,232,0.03) 40%, rgba(255,255,255,0) 70%)',
+          pointerEvents: 'none',
+          zIndex: 0
+        }}></div>
         
         {/* Left Text Module */}
-        <div className="hero-text" style={{ flex: '1', maxWidth: '600px', textAlign: 'left' }}>
+        <div className="hero-text" style={{ flex: '1', maxWidth: '600px', textAlign: 'left', position: 'relative', zIndex: 1 }}>
           
           {/* New Badge */}
-          <div style={{ display: 'inline-block', background: '#e6f4ea', color: '#137333', padding: '4px 12px', borderRadius: '16px', fontSize: '0.8rem', fontWeight: '600', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'inline-block', background: '#e6f4ea', color: '#137333', padding: '4px 12px', borderRadius: '16px', fontSize: '0.8rem', fontWeight: '700', marginBottom: '1.5rem', letterSpacing: '0.5px' }}>
             NEW
           </div>
           
           {/* Headline */}
-          <h1 style={{ fontSize: '3rem', lineHeight: '1.2', color: '#202124', fontWeight: '400', marginBottom: '2rem' }}>
+          <h1 style={{ fontSize: '3.2rem', lineHeight: '1.15', color: '#202124', fontWeight: '800', marginBottom: '2rem', letterSpacing: '-0.02em', fontFamily: "'Inter', 'Roboto', sans-serif" }}>
             We re-engineered the service we built for secure business meetings, VartaConnect, to make it free and available for all.
           </h1>
           
           {/* Dual CTAs */}
           <div style={{ display: 'flex', gap: '1rem', marginBottom: '3rem' }}>
             <button 
+              className="btn-glow-blue"
               onClick={() => setShowLoginModal(true)} 
-              style={{ background: '#1A73E8', color: '#FFFFFF', border: 'none', borderRadius: '4px', padding: '0.75rem 1.5rem', fontSize: '1rem', fontWeight: '500', cursor: 'pointer' }}>
+              style={{ background: '#1A73E8', color: '#FFFFFF', border: 'none', borderRadius: '8px', padding: '0.9rem 1.8rem', fontSize: '1.05rem', fontWeight: '600', cursor: 'pointer' }}>
               Sign in
             </button>
             <button 
-              style={{ background: '#FFFFFF', color: '#1A73E8', border: '1px solid #dadce0', borderRadius: '4px', padding: '0.75rem 1.5rem', fontSize: '1rem', fontWeight: '500', cursor: 'pointer' }}>
+              className="btn-outline-glow"
+              style={{ background: '#FFFFFF', color: '#1A73E8', border: '2px solid #dadce0', borderRadius: '8px', padding: '0.9rem 1.8rem', fontSize: '1.05rem', fontWeight: '600', cursor: 'pointer' }}>
               Try Meet for work
             </button>
           </div>
@@ -117,8 +152,8 @@ export default function Landing() {
         </div>
 
         {/* Right Image Module */}
-        <div className="hero-image" style={{ flex: '1', display: 'flex', justifyContent: 'center' }}>
-          <img src="https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?q=80&w=2874&auto=format&fit=crop" alt="Video Conferencing Screen" style={{ maxWidth: '100%', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+        <div className="hero-image" style={{ flex: '1', display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
+          <img src="/man_laptop_desk.png" alt="Video Conferencing Illustration" style={{ maxWidth: '110%', height: 'auto', filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.08))' }} />
         </div>
       </main>
 

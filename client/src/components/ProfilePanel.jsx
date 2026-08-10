@@ -38,12 +38,13 @@ const ProfilePanel = ({ isOpen, onClose, user, onUpdate }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await fetch('/api/auth/profile', {
+      const serverUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : `${window.location.protocol}//${window.location.hostname}:5000`;
+      const response = await fetch(`${serverUrl}/api/auth/profile`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(formData)
       });
       const data = await response.json();
@@ -145,14 +146,18 @@ const ProfilePanel = ({ isOpen, onClose, user, onUpdate }) => {
 
           <div className="profile-form-group">
             <label className="profile-label">Gender</label>
-            <div className="profile-gender-toggle">
-              <span className="gender-option" onClick={() => setFormData({...formData, sex: 'Male'})} style={{ fontWeight: formData.sex === 'Male' ? 'bold' : 'normal', color: formData.sex === 'Male' ? 'var(--accent-violet)' : 'var(--text-secondary)'}}>Male</span>
-              
-              <div className={`toggle-switch ${formData.sex === 'Female' ? 'active' : ''}`} onClick={handleGenderToggle}>
-                <div className="toggle-thumb"></div>
-              </div>
-              
-              <span className="gender-option" onClick={() => setFormData({...formData, sex: 'Female'})} style={{ fontWeight: formData.sex === 'Female' ? 'bold' : 'normal', color: formData.sex === 'Female' ? 'var(--accent-violet)' : 'var(--text-secondary)'}}>Female</span>
+            <div className="profile-input-wrapper">
+              <select 
+                name="sex" 
+                className="profile-input" 
+                value={formData.sex}
+                onChange={handleChange}
+              >
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
           </div>
 

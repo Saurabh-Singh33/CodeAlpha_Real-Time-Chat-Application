@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap');
 
 :root {
   --bg-dark: #080c14;
@@ -1352,5 +1352,4 @@ h1, h2, h3, h4, h5, h6 {
   border-color: #1d4ed8;
   color: #1d4ed8 !important;
 }
-. r e s i z e - h a n d l e   {   p o s i t i o n :   a b s o l u t e ;   l e f t :   0 ;   t o p :   0 ;   b o t t o m :   0 ;   w i d t h :   6 p x ;   c u r s o r :   e w - r e s i z e ;   z - i n d e x :   1 0 0 ;   t r a n s i t i o n :   b a c k g r o u n d   0 . 2 s ;   }   . r e s i z e - h a n d l e : h o v e r ,   . r e s i z e - h a n d l e : a c t i v e   {   b a c k g r o u n d :   v a r ( - - r m - a c c e n t ) ;   }  
- 
+.resize-handle { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; cursor: ew-resize; z-index: 100; transition: background 0.2s; } .resize-handle:hover, .resize-handle:active { background: var(--rm-accent); }

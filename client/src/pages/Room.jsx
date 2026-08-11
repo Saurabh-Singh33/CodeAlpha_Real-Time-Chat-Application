@@ -7,7 +7,7 @@ import Chat from '../components/Chat';
 import Whiteboard from '../components/Whiteboard';
 import { 
   Monitor, MonitorUp, Video, VideoOff, Mic, MicOff, MessageSquare, 
-  Smile, X, StopCircle, Users, UserPlus, Layout, Copy, Check, Disc, Clock
+  Smile, X, StopCircle, Users, UserPlus, Layout, Copy, Check, Disc, Clock, Moon, Sun, Lock, Unlock
 } from 'lucide-react';
 
 export default function Room() {
@@ -39,7 +39,13 @@ export default function Room() {
   
   const [isValidating, setIsValidating] = useState(true);
   const [roomError, setRoomError] = useState('');
+  const [hostId, setHostId] = useState(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [chatEnabled, setChatEnabled] = useState(true);
+  const [sidePanelWidth, setSidePanelWidth] = useState(380);
   
+  const isHost = user && (user.email === hostId);
+
   // Call Duration Timer
   const [secondsElapsed, setSecondsElapsed] = useState(0);
 
@@ -73,6 +79,8 @@ export default function Room() {
         const data = await res.json();
         if (!data.exists) {
           setRoomError('Meeting not found or link expired.');
+        } else {
+          setHostId(data.hostId);
         }
       } catch (_err) {
         setRoomError('Failed to verify meeting. Please check network connection.');
@@ -102,6 +110,10 @@ export default function Room() {
       setUsersInRoom(users);
     });
 
+    socket.on('chat-toggled', (enabled) => {
+      setChatEnabled(enabled);
+    });
+
     socket.on('user-connected', (newUser) => {
       setUsersInRoom(prev => {
         if (!prev.find(u => u.id === newUser.userId)) {
@@ -123,6 +135,7 @@ export default function Room() {
       socket.off('room-users');
       socket.off('user-connected');
       socket.off('user-disconnected');
+      socket.off('chat-toggled');
     };
   }, [roomId, socket, user, isValidating, roomError]);
 
@@ -252,6 +265,33 @@ export default function Room() {
     setTimeout(() => setLinkCopied(false), 2000);
   };
 
+  const handleToggleChat = () => {
+    if (!isHost) return;
+    const newState = !chatEnabled;
+    socket.emit('toggle-chat', { roomId, enabled: newState });
+    setChatEnabled(newState);
+  };
+
+  const startResizing = (mouseDownEvent) => {
+    mouseDownEvent.preventDefault();
+    const startX = mouseDownEvent.clientX;
+    const startWidth = sidePanelWidth;
+
+    const onMouseMove = (mouseMoveEvent) => {
+      const deltaX = startX - mouseMoveEvent.clientX;
+      const newWidth = Math.min(Math.max(startWidth + deltaX, 280), window.innerWidth * 0.45);
+      setSidePanelWidth(newWidth);
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  };
+
   const [inviteError, setInviteError] = useState('');
 
   const handleSendInvite = async (e) => {
@@ -321,16 +361,25 @@ export default function Room() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-      <div className="room-container">
+      <div className={`room-container ${isDarkMode ? 'dark-theme' : 'light-theme'}`}>
         <div className="main-stage">
           {/* Top Bar Header */}
           <div className="top-bar">
             <div className="room-title">
-              <span style={{ color: 'var(--text-muted)' }}>Room:</span> 
+              <span style={{ color: 'var(--rm-text-muted)' }}>Room:</span> 
               <span>{roomId.length > 12 ? `${roomId.substring(0, 12)}...` : roomId}</span>
             </div>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <button 
+                className="feature-btn" 
+                onClick={() => setIsDarkMode(!isDarkMode)} 
+                title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                style={{ padding: '6px' }}
+              >
+                {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+              </button>
+
               {isRecording && (
                 <div className="recording-badge">
                   <div className="live-dot" style={{ background: '#ef4444' }}></div> REC
@@ -433,18 +482,38 @@ export default function Room() {
         </div>
 
         {/* Side Panel (Chat & Participants) */}
-        <div className="side-panel">
+        <div className="side-panel" style={{ width: `${sidePanelWidth}px` }}>
+          <div className="resize-handle" onMouseDown={startResizing} title="Drag to resize"></div>
           <div className="side-panel-header">
-            <span className="side-panel-title">{sidePanel === 'chat' ? 'Group Chat' : 'Participants'}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="side-panel-title">{sidePanel === 'chat' ? 'Group Chat' : 'Participants'}</span>
+              
+              {/* Chat Toggle Lock (Host Only) */}
+              {sidePanel === 'chat' && (
+                <button 
+                  onClick={handleToggleChat}
+                  disabled={!isHost}
+                  style={{ 
+                    background: 'none', border: 'none', cursor: isHost ? 'pointer' : 'not-allowed',
+                    color: chatEnabled ? 'var(--rm-text-secondary)' : 'var(--rm-danger)',
+                    display: 'flex', alignItems: 'center', padding: '2px', opacity: isHost ? 1 : 0.4
+                  }}
+                  title={isHost ? (chatEnabled ? 'Disable chat for everyone' : 'Enable chat for everyone') : 'Only the host can disable chat'}
+                >
+                  {chatEnabled ? <Unlock size={14} /> : <Lock size={14} />}
+                </button>
+              )}
+            </div>
+            
             <button className="btn-icon" style={{ width: '36px', height: '36px' }} onClick={() => setSidePanel(sidePanel === 'chat' ? 'users' : 'chat')}>
               {sidePanel === 'chat' ? <Users size={16} /> : <MessageSquare size={16} />}
             </button>
           </div>
           
-          {sidePanel === 'chat' && <Chat roomId={roomId} />}
+          {sidePanel === 'chat' && <Chat roomId={roomId} chatEnabled={chatEnabled} />}
           
           {sidePanel === 'users' && (
-            <div style={{ padding: '1.25rem', color: 'white', display: 'flex', flexDirection: 'column', gap: '0.75rem', overflowY: 'auto', flex: 1 }}>
+            <div style={{ padding: '1.25rem', color: 'var(--rm-text-primary)', display: 'flex', flexDirection: 'column', gap: '0.75rem', overflowY: 'auto', flex: 1 }}>
               {/* You */}
               <div style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.85rem', border: '1px solid var(--border-glass)' }}>
                 <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-indigo), var(--accent-violet))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.95rem' }}>
@@ -458,13 +527,13 @@ export default function Room() {
               
               {/* Other Participants */}
               {usersInRoom.map(u => (
-                <div key={u.id} style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.85rem', border: '1px solid var(--border-glass)' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.95rem' }}>
+                <div key={u.id} style={{ padding: '0.85rem 1rem', background: 'var(--rm-icon-bg)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.85rem', border: '1px solid var(--rm-border)' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--rm-icon-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.95rem', color: 'var(--rm-text-primary)' }}>
                     {u.username?.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{u.username}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Participant</div>
+                    <div style={{ fontWeight: '600', fontSize: '0.9rem', color: 'var(--rm-text-primary)' }}>{u.username}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--rm-text-muted)' }}>Participant</div>
                   </div>
                 </div>
               ))}

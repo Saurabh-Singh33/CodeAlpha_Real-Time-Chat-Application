@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import { SocketContext } from '../context/SocketContext';
 import { Send, Paperclip, Download, X } from 'lucide-react';
 
-export default function Chat({ roomId }) {
+export default function Chat({ roomId, chatEnabled = true }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
@@ -32,6 +32,7 @@ export default function Chat({ roomId }) {
 
   const sendMessage = (e) => {
     e.preventDefault();
+    if (!chatEnabled) return;
     if (input.trim() && socket) {
       socket.emit('chat-message', {
         type: 'text',
@@ -156,41 +157,44 @@ export default function Chat({ roomId }) {
       </div>
 
       {/* Input bar */}
-      <form onSubmit={sendMessage} className="chat-input">
+      <form onSubmit={sendMessage} className="chat-input" style={{ opacity: chatEnabled ? 1 : 0.6 }}>
         <input 
           type="file" 
           ref={fileInputRef} 
           style={{ display: 'none' }} 
           onChange={handleFileUpload}
+          disabled={!chatEnabled}
         />
         <button 
           type="button" 
-          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.4rem', borderRadius: '50%', display: 'flex' }}
-          onClick={() => fileInputRef.current?.click()}
+          style={{ background: 'transparent', border: 'none', color: 'var(--rm-text-muted)', cursor: chatEnabled ? 'pointer' : 'not-allowed', padding: '0.4rem', borderRadius: '50%', display: 'flex' }}
+          onClick={() => chatEnabled && fileInputRef.current?.click()}
           title="Attach Image or File"
+          disabled={!chatEnabled}
         >
           <Paperclip size={18} />
         </button>
         <input
           type="text"
-          placeholder="Type a message..."
+          placeholder={chatEnabled ? "Type a message..." : "Chat is disabled by host"}
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          disabled={!chatEnabled}
         />
         <button 
           type="submit" 
-          disabled={!input.trim()}
+          disabled={!input.trim() || !chatEnabled}
           style={{ 
             width: '36px', 
             height: '36px', 
             borderRadius: '50%', 
-            background: input.trim() ? 'var(--accent-indigo)' : 'rgba(255,255,255,0.1)', 
-            color: 'white', 
+            background: (input.trim() && chatEnabled) ? 'var(--rm-accent)' : 'rgba(0,0,0,0.1)', 
+            color: (input.trim() && chatEnabled) ? 'white' : 'var(--rm-text-muted)', 
             border: 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            cursor: input.trim() ? 'pointer' : 'default',
+            cursor: (input.trim() && chatEnabled) ? 'pointer' : 'not-allowed',
             transition: 'background 0.2s'
           }}
         >

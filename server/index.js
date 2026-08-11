@@ -66,12 +66,12 @@ app.post('/api/contact', async (req, res) => {
 
 // API to create a new room
 app.post('/api/rooms', async (req, res) => {
-  const { roomId } = req.body;
+  const { roomId, hostId } = req.body;
   if (!roomId) return res.status(400).json({ error: 'Room ID is required' });
   try {
     let room = await Room.findOne({ id: roomId });
     if (!room) {
-      room = await Room.create({ id: roomId });
+      room = await Room.create({ id: roomId, hostId });
     }
     res.json({ success: true, roomId });
   } catch (err) {
@@ -86,7 +86,7 @@ app.get('/api/rooms/:roomId', async (req, res) => {
   try {
     const room = await Room.findOne({ id: roomId });
     if (room || (rooms[roomId] && Object.keys(rooms[roomId]).length > 0)) {
-      res.json({ exists: true });
+      res.json({ exists: true, hostId: room?.hostId });
     } else {
       res.json({ exists: false });
     }
@@ -145,6 +145,10 @@ io.on('connection', (socket) => {
       caller: socket.id,
       sdp: payload.sdp
     });
+  });
+
+  socket.on('toggle-chat', (payload) => {
+    io.to(payload.roomId).emit('chat-toggled', payload.enabled);
   });
 
   socket.on('ice-candidate', (payload) => {

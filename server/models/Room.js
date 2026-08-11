@@ -5,6 +5,9 @@ const roomSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true
+  },
+  hostId: {
+    type: String,
   }
 }, { timestamps: true });
 

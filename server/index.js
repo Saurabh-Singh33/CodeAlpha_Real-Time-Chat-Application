@@ -5,6 +5,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/auth');
+const meetingRoutes = require('./routes/meetings');
 const Room = require('./models/Room');
 const connectDB = require('./config/db');
 const { sendMeetingInvite, sendContactEmail } = require('./mailer');
@@ -23,6 +24,7 @@ app.use(cookieParser());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/meetings', meetingRoutes);
 
 // API to send room invite via email
 app.post('/api/rooms/invite', async (req, res) => {

@@ -27,12 +27,7 @@ const ProfilePanel = ({ isOpen, onClose, user, onUpdate }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleGenderToggle = () => {
-    setFormData(prev => ({
-      ...prev,
-      sex: prev.sex === 'Female' ? 'Male' : 'Female'
-    }));
-  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();

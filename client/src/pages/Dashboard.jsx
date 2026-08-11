@@ -149,7 +149,7 @@ export default function Dashboard() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ roomId: newRoomId })
+        body: JSON.stringify({ roomId: newRoomId, hostId: currentUser?.email })
       });
       
       if (res.ok) {

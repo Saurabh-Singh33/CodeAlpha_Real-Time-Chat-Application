@@ -114,6 +114,10 @@ export default function Room() {
       setChatEnabled(enabled);
     });
 
+    socket.on('switch-tab', (tab) => {
+      setActiveTab(tab);
+    });
+
     socket.on('user-connected', (newUser) => {
       setUsersInRoom(prev => {
         if (!prev.find(u => u.id === newUser.userId)) {
@@ -136,8 +140,16 @@ export default function Room() {
       socket.off('user-connected');
       socket.off('user-disconnected');
       socket.off('chat-toggled');
+      socket.off('switch-tab');
     };
   }, [roomId, socket, user, isValidating, roomError]);
+
+  const handleTabSwitch = (tab) => {
+    setActiveTab(tab);
+    if (isHost && socket) {
+      socket.emit('switch-tab', { roomId, tab });
+    }
+  };
 
   const toggleVideo = () => {
     if (streamRef.current) {
@@ -407,7 +419,7 @@ export default function Room() {
               isAudioMuted={isAudioMuted}
             />
           ) : (
-            <Whiteboard roomId={roomId} />
+            <Whiteboard roomId={roomId} isHost={isHost} />
           )}
           
           {/* Bottom Dock Control Bar */}
@@ -464,10 +476,12 @@ export default function Room() {
             
             {/* Right Tools Section */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, justifyContent: 'flex-end' }}>
-              <button className="feature-btn" onClick={() => setActiveTab(activeTab === 'video' ? 'whiteboard' : 'video')}>
-                <Layout size={16} />
-                <span className="hide-on-mobile">{activeTab === 'video' ? 'Whiteboard' : 'Video Grid'}</span>
-              </button>
+              {isHost && (
+                <button className="feature-btn" onClick={() => handleTabSwitch(activeTab === 'video' ? 'whiteboard' : 'video')}>
+                  <Layout size={16} />
+                  <span className="hide-on-mobile">{activeTab === 'video' ? 'Whiteboard' : 'Video Grid'}</span>
+                </button>
+              )}
 
               <button className={`feature-btn ${sidePanel === 'users' ? 'active' : ''}`} onClick={() => setSidePanel(sidePanel === 'users' ? 'chat' : 'users')}>
                 <Users size={16} />

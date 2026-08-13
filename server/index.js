@@ -171,18 +171,46 @@ io.on('connection', (socket) => {
     });
   });
 
-  // Whiteboard
-  socket.on('draw', (drawData) => {
-    const targetRoomId = drawData.roomId || socket.roomId;
-    if (targetRoomId) {
-      socket.to(targetRoomId).emit('draw', drawData);
-    }
-  });
-  
-  socket.on('clear-board', (roomId) => {
+  // Whiteboard & Tab Sync
+  socket.on('switch-tab', ({ roomId, tab }) => {
     const targetRoomId = roomId || socket.roomId;
     if (targetRoomId) {
-      socket.to(targetRoomId).emit('clear-board');
+      socket.to(targetRoomId).emit('switch-tab', tab);
+    }
+  });
+
+  socket.on('whiteboard-update', (data) => {
+    const targetRoomId = data.roomId || socket.roomId;
+    if (targetRoomId) {
+      socket.to(targetRoomId).emit('whiteboard-update', data);
+    }
+  });
+
+  socket.on('whiteboard-page', (data) => {
+    const targetRoomId = data.roomId || socket.roomId;
+    if (targetRoomId) {
+      socket.to(targetRoomId).emit('whiteboard-page', data);
+    }
+  });
+
+  socket.on('laser-pointer', (data) => {
+    const targetRoomId = data.roomId || socket.roomId;
+    if (targetRoomId) {
+      socket.to(targetRoomId).emit('laser-pointer', data);
+    }
+  });
+
+  socket.on('cursor-move', (data) => {
+    const targetRoomId = data.roomId || socket.roomId;
+    if (targetRoomId) {
+      socket.to(targetRoomId).emit('cursor-move', data);
+    }
+  });
+
+  socket.on('whiteboard-lock', (data) => {
+    const targetRoomId = data.roomId || socket.roomId;
+    if (targetRoomId) {
+      socket.to(targetRoomId).emit('whiteboard-lock', data);
     }
   });
 

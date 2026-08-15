@@ -88,8 +88,11 @@ export default function VideoGrid({ localStream, isScreenSharing, isVideoMuted, 
   }, [socket]);
 
   // WebRTC Signaling with ICE candidate queueing
+  const localStreamRef = useRef(localStream);
+  localStreamRef.current = localStream;
+
   useEffect(() => {
-    if (!socket || !localStream) return;
+    if (!socket) return;
 
     const addPendingCandidates = async (targetSocketId, pc) => {
       const pending = pendingCandidatesRef.current[targetSocketId];
@@ -114,9 +117,11 @@ export default function VideoGrid({ localStream, isScreenSharing, isVideoMuted, 
       });
 
       // Add local tracks
-      localStream.getTracks().forEach(track => {
-        peerConnection.addTrack(track, localStream);
-      });
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(track => {
+          peerConnection.addTrack(track, localStreamRef.current);
+        });
+      }
 
       // Handle remote tracks
       peerConnection.ontrack = (event) => {
@@ -216,15 +221,20 @@ export default function VideoGrid({ localStream, isScreenSharing, isVideoMuted, 
       socket.off('ice-candidate');
       socket.off('user-disconnected');
     };
-  }, [socket, localStream]);
+  }, [socket]);
 
   return (
     <div className="video-grid">
       {/* Local User Tile */}
       <div className="video-container">
-        {!isVideoMuted ? (
-          <video ref={localVideoRef} autoPlay playsInline muted style={{ objectFit: isScreenSharing ? 'contain' : 'cover' }} />
-        ) : (
+        <video 
+          ref={localVideoRef} 
+          autoPlay 
+          playsInline 
+          muted 
+          style={{ display: isVideoMuted ? 'none' : 'block', objectFit: isScreenSharing ? 'contain' : 'cover', width: '100%', height: '100%' }} 
+        />
+        {isVideoMuted && (
           <div className="avatar-fallback">
             {user?.username?.charAt(0).toUpperCase()}
           </div>
@@ -264,16 +274,20 @@ function RemoteVideo({ stream, username, reaction, isVideoMuted, isAudioMuted })
   const videoRef = useRef();
 
   useEffect(() => {
-    if (videoRef.current && stream && !isVideoMuted) {
+    if (videoRef.current && stream) {
       videoRef.current.srcObject = stream;
     }
-  }, [stream, isVideoMuted]);
+  }, [stream]);
 
   return (
     <div className="video-container">
-      {!isVideoMuted ? (
-        <video ref={videoRef} autoPlay playsInline />
-      ) : (
+      <video 
+        ref={videoRef} 
+        autoPlay 
+        playsInline 
+        style={{ display: isVideoMuted ? 'none' : 'block', width: '100%', height: '100%', objectFit: 'cover' }} 
+      />
+      {isVideoMuted && (
         <div className="avatar-fallback">
           {username?.charAt(0).toUpperCase()}
         </div>

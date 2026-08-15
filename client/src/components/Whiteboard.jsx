@@ -19,6 +19,7 @@ export default function Whiteboard({ roomId, isHost }) {
   const [tool, setTool] = useState('pen'); // pen, highlighter, eraser, text, rect, circle, triangle, line, arrow, pan, laser, select
   const [color, setColor] = useState('#000000');
   const [lineWidth, setLineWidth] = useState(4);
+  const [showShapes, setShowShapes] = useState(false);
   
   const [pages, setPages] = useState(['']); // array of JSON strings
   const [currentPage, setCurrentPage] = useState(0);
@@ -545,18 +546,18 @@ export default function Whiteboard({ roomId, isHost }) {
   const isViewOnly = !isHost && !studentDrawEnabled;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', borderRadius: 'var(--radius-lg)', overflow: 'hidden', background: '#ffffff', color: '#1F2937' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', borderRadius: 'var(--radius-lg)', overflow: 'hidden', background: 'var(--rm-panel)', color: 'var(--rm-text-primary)' }}>
       
       {/* Top Toolbar */}
       {isViewOnly ? (
-        <div className="whiteboard-toolbar" style={{ display: 'flex', justifyContent: 'center', padding: '10px', background: '#f3f4f6', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
+        <div className="whiteboard-toolbar" style={{ display: 'flex', justifyContent: 'center', padding: '10px', background: 'var(--rm-icon-bg)', borderBottom: '1px solid var(--rm-border)' }}>
           <span style={{ fontSize: '0.85rem', color: '#4B5563', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Lock size={14} />
             Host has locked the whiteboard. View only.
           </span>
         </div>
       ) : (
-        <div className="whiteboard-toolbar" style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', background: '#f3f4f6', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
+        <div className="whiteboard-toolbar" style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', background: 'var(--rm-icon-bg)', borderBottom: '1px solid var(--rm-border)' }}>
           
           {/* Tools Section */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -568,11 +569,34 @@ export default function Whiteboard({ roomId, isHost }) {
             
             <div style={{ borderLeft: '1px solid #d1d5db', height: '24px', margin: '0 4px' }}></div>
             
-            <button className={`feature-btn ${tool === 'rect' ? 'active' : ''}`} onClick={() => setTool('rect')} title="Rectangle"><Square size={16} /></button>
-            <button className={`feature-btn ${tool === 'circle' ? 'active' : ''}`} onClick={() => setTool('circle')} title="Circle"><Circle size={16} /></button>
-            <button className={`feature-btn ${tool === 'triangle' ? 'active' : ''}`} onClick={() => setTool('triangle')} title="Triangle"><Triangle size={16} /></button>
-            <button className={`feature-btn ${tool === 'line' ? 'active' : ''}`} onClick={() => setTool('line')} title="Line"><Minus size={16} /></button>
-            <button className={`feature-btn ${tool === 'arrow' ? 'active' : ''}`} onClick={() => setTool('arrow')} title="Arrow"><ArrowRight size={16} /></button>
+            <div style={{ position: 'relative' }}>
+              <button 
+                className={`feature-btn ${['rect', 'circle', 'triangle', 'line', 'arrow'].includes(tool) ? 'active' : ''}`} 
+                onClick={() => setShowShapes(!showShapes)}
+                title="Shapes"
+              >
+                {tool === 'circle' ? <Circle size={16} /> :
+                 tool === 'triangle' ? <Triangle size={16} /> :
+                 tool === 'line' ? <Minus size={16} /> :
+                 tool === 'arrow' ? <ArrowRight size={16} /> :
+                 <Square size={16} />}
+              </button>
+              
+              {showShapes && (
+                <div style={{ 
+                  position: 'absolute', top: '100%', left: 0, marginTop: '4px',
+                  background: 'var(--rm-panel)', border: '1px solid var(--rm-border)', 
+                  borderRadius: '8px', padding: '4px', display: 'flex', flexDirection: 'column', gap: '4px', zIndex: 50,
+                  boxShadow: 'var(--rm-shadow)'
+                }}>
+                  <button className={`feature-btn ${tool === 'rect' ? 'active' : ''}`} onClick={() => { setTool('rect'); setShowShapes(false); }} title="Rectangle"><Square size={16} /></button>
+                  <button className={`feature-btn ${tool === 'circle' ? 'active' : ''}`} onClick={() => { setTool('circle'); setShowShapes(false); }} title="Circle"><Circle size={16} /></button>
+                  <button className={`feature-btn ${tool === 'triangle' ? 'active' : ''}`} onClick={() => { setTool('triangle'); setShowShapes(false); }} title="Triangle"><Triangle size={16} /></button>
+                  <button className={`feature-btn ${tool === 'line' ? 'active' : ''}`} onClick={() => { setTool('line'); setShowShapes(false); }} title="Line"><Minus size={16} /></button>
+                  <button className={`feature-btn ${tool === 'arrow' ? 'active' : ''}`} onClick={() => { setTool('arrow'); setShowShapes(false); }} title="Arrow"><ArrowRight size={16} /></button>
+                </div>
+              )}
+            </div>
             
             <div style={{ borderLeft: '1px solid #d1d5db', height: '24px', margin: '0 4px' }}></div>
             
@@ -624,6 +648,9 @@ export default function Whiteboard({ roomId, isHost }) {
 
             <button className="feature-btn" onClick={sendToChat} title="Send Snapshot to Chat">
               <Send size={16} />
+            </button>
+            <button className="feature-btn" onClick={downloadWhiteboard} title="Download Whiteboard">
+              <Download size={16} />
             </button>
 
             <button className="feature-btn" onClick={handleUndo} disabled={undoStack.length <= 1} title="Undo"><Undo size={16} /></button>

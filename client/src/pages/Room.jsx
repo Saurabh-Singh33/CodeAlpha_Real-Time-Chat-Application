@@ -44,7 +44,7 @@ export default function Room() {
   const [chatEnabled, setChatEnabled] = useState(true);
   const [sidePanelWidth, setSidePanelWidth] = useState(380);
   
-  const isHost = user && (user.email === hostId);
+  const [isHost, setIsHost] = useState(false);
 
   // Call Duration Timer
   const [secondsElapsed, setSecondsElapsed] = useState(0);
@@ -94,16 +94,21 @@ export default function Room() {
   useEffect(() => {
     if (!socket || !user || isValidating || roomError) return;
     
+    const handleRoomJoined = ({ isHost }) => {
+      setIsHost(isHost);
+    };
+    socket.on('room-joined', handleRoomJoined);
+    
     // Request media access
       navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       .then(currentStream => {
         setStream(currentStream);
         streamRef.current = currentStream;
-        socket.emit('join-room', roomId, user.name || user.username);
+        socket.emit('join-room', roomId, user.name || user.username, user.email);
       })
       .catch(err => {
         console.warn('Media access error, joining audio/video fallback', err);
-        socket.emit('join-room', roomId, user.name || user.username);
+        socket.emit('join-room', roomId, user.name || user.username, user.email);
       });
       
     socket.on('room-users', (users) => {
@@ -136,6 +141,7 @@ export default function Room() {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
       }
+      socket.off('room-joined', handleRoomJoined);
       socket.off('room-users');
       socket.off('user-connected');
       socket.off('user-disconnected');

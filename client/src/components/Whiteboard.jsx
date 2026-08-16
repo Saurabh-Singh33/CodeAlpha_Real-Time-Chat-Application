@@ -543,6 +543,25 @@ export default function Whiteboard({ roomId, isHost }) {
     });
   };
 
+  const downloadWhiteboard = () => {
+    if (!canvasRef.current) return;
+    
+    // Save current zoom & pan
+    const vpt = canvasRef.current.viewportTransform.slice();
+    // Reset zoom & pan temporarily to capture the whole natural board
+    canvasRef.current.setViewportTransform([1,0,0,1,0,0]);
+    
+    const dataURL = canvasRef.current.toDataURL({ format: 'png', multiplier: 2 });
+    
+    // Restore zoom & pan
+    canvasRef.current.setViewportTransform(vpt);
+
+    const a = document.createElement('a');
+    a.href = dataURL;
+    a.download = `whiteboard-${Date.now()}.png`;
+    a.click();
+  };
+
   const isViewOnly = !isHost && !studentDrawEnabled;
 
   return (

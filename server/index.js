@@ -109,17 +109,31 @@ const rooms = {};
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
 
-  socket.on('join-room', (roomId, username) => {
+  socket.on('join-room', async (roomId, username, userEmail) => {
     socket.join(roomId);
     
     // Store user info on the socket for other events
     socket.roomId = roomId;
     socket.username = username;
     
+    let isHost = false;
+    try {
+      const room = await Room.findOne({ id: roomId });
+      if (room && room.hostId === userEmail) {
+        isHost = true;
+      } else if (!room && (!rooms[roomId] || Object.keys(rooms[roomId]).length === 0)) {
+        isHost = true;
+      }
+    } catch(err) {
+      console.error('Error verifying host:', err);
+    }
+    
     if (!rooms[roomId]) {
       rooms[roomId] = {};
     }
-    rooms[roomId][socket.id] = { username, id: socket.id };
+    rooms[roomId][socket.id] = { username, id: socket.id, isHost };
+
+    socket.emit('room-joined', { isHost });
 
     // Let everyone else in the room know someone joined
     socket.to(roomId).emit('user-connected', { userId: socket.id, username });

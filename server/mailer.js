@@ -17,6 +17,9 @@ const sendMeetingInvite = async ({ toEmail, roomId, roomLink, inviterName }) => 
     }
   });
 
+  const appName = process.env.APP_NAME || 'VartaConnect';
+  const logoUrl = process.env.LOGO_URL || 'YOUR_LOGO_URL_HERE'; // Please add your logo URL to .env as LOGO_URL
+
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -26,7 +29,8 @@ const sendMeetingInvite = async ({ toEmail, roomId, roomLink, inviterName }) => 
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0b0f19; color: #f8fafc; margin: 0; padding: 20px; }
         .container { max-width: 560px; margin: 0 auto; background: #121826; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
         .header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
-        .logo-box { width: 44px; height: 44px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 12px; display: inline-block; text-align: center; line-height: 44px; font-size: 22px; color: white; font-weight: bold; }
+        .logo-box { width: 44px; height: 44px; display: inline-block; }
+        .logo-box img { width: 100%; height: 100%; object-fit: contain; }
         .app-name { font-size: 22px; font-weight: 700; color: #ffffff; margin-left: 10px; vertical-align: middle; }
         h2 { font-size: 22px; font-weight: 700; color: #ffffff; margin-top: 0; margin-bottom: 8px; }
         p { font-size: 15px; color: #94a3b8; line-height: 1.6; margin-bottom: 20px; }
@@ -40,17 +44,17 @@ const sendMeetingInvite = async ({ toEmail, roomId, roomLink, inviterName }) => 
     <body>
       <div class="container">
         <div class="header">
-          <span class="logo-box">📹</span>
-          <span class="app-name">RealComm</span>
+          <span class="logo-box"><img src="${logoUrl}" alt="${appName} Logo" /></span>
+          <span class="app-name">${appName}</span>
         </div>
         
         <h2>You've Been Invited to a Video Meeting</h2>
-        <p><strong>${inviterName || 'A participant'}</strong> is inviting you to join a real-time HD video call on RealComm.</p>
+        <p><strong>${inviterName || 'A participant'}</strong> is inviting you to join a real-time HD video call on ${appName}.</p>
         
         <div class="info-card">
           <div style="margin-bottom: 12px;">
             <div class="info-label">Invited By</div>
-            <div style="font-size: 15px; color: #f8fafc; font-weight: 600;">${inviterName || 'RealComm User'}</div>
+            <div style="font-size: 15px; color: #f8fafc; font-weight: 600;">${inviterName || `${appName} User`}</div>
           </div>
           <div>
             <div class="info-label">Meeting Code</div>
@@ -65,7 +69,7 @@ const sendMeetingInvite = async ({ toEmail, roomId, roomLink, inviterName }) => 
         <p style="font-size: 13px; color: #64748b;">Or copy & paste this URL into your browser:<br><a href="${roomLink}" style="color: #6366f1;">${roomLink}</a></p>
         
         <div class="footer">
-          RealComm Encrypted Video Meetings • P2P WebRTC Communication
+          ${appName} Encrypted Video Meetings • P2P WebRTC Communication
         </div>
       </div>
     </body>
@@ -73,9 +77,9 @@ const sendMeetingInvite = async ({ toEmail, roomId, roomLink, inviterName }) => 
   `;
 
   const mailOptions = {
-    from: `"RealComm Meetings" <${gmailUser}>`,
+    from: `"${appName} Meetings" <${gmailUser}>`,
     to: toEmail,
-    subject: `📹 Meeting Invitation: Join ${inviterName || 'User'} on RealComm`,
+    subject: `📹 Meeting Invitation: Join ${inviterName || 'User'} on ${appName}`,
     html: htmlContent
   };
 

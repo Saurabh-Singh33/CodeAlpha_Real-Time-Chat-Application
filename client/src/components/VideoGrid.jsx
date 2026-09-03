@@ -41,6 +41,7 @@ export default function VideoGrid({ localStream, isScreenSharing, isVideoMuted, 
           if (audioTrack) tracks.push(audioTrack);
         }
         localVideoRef.current.srcObject = new MediaStream(tracks);
+        localVideoRef.current.play().catch(e => console.error('Error playing local stream', e));
       }
     };
     
@@ -71,10 +72,10 @@ export default function VideoGrid({ localStream, isScreenSharing, isVideoMuted, 
       }, 2200);
     };
 
-    const handleUserMediaState = ({ userId, isVideoMuted, isAudioMuted }) => {
+    const handleUserMediaState = ({ userId, isVideoMuted, isAudioMuted, isScreenSharing }) => {
       setUserMediaStates(prev => ({
         ...prev,
-        [userId]: { isVideoMuted, isAudioMuted }
+        [userId]: { isVideoMuted, isAudioMuted, isScreenSharing }
       }));
     };
 
@@ -232,9 +233,9 @@ export default function VideoGrid({ localStream, isScreenSharing, isVideoMuted, 
           autoPlay 
           playsInline 
           muted 
-          style={{ display: isVideoMuted ? 'none' : 'block', objectFit: isScreenSharing ? 'contain' : 'cover', width: '100%', height: '100%' }} 
+          style={{ display: (!isVideoMuted || isScreenSharing) ? 'block' : 'none', objectFit: isScreenSharing ? 'contain' : 'cover', width: '100%', height: '100%' }} 
         />
-        {isVideoMuted && (
+        {(isVideoMuted && !isScreenSharing) && (
           <div className="avatar-fallback">
             {user?.username?.charAt(0).toUpperCase()}
           </div>
@@ -263,6 +264,7 @@ export default function VideoGrid({ localStream, isScreenSharing, isVideoMuted, 
             reaction={reactions[socketId]}
             isVideoMuted={mediaState.isVideoMuted}
             isAudioMuted={mediaState.isAudioMuted}
+            isScreenSharing={mediaState.isScreenSharing}
           />
         );
       })}
@@ -270,7 +272,7 @@ export default function VideoGrid({ localStream, isScreenSharing, isVideoMuted, 
   );
 }
 
-function RemoteVideo({ stream, username, reaction, isVideoMuted, isAudioMuted }) {
+function RemoteVideo({ stream, username, reaction, isVideoMuted, isAudioMuted, isScreenSharing }) {
   const videoRef = useRef();
 
   useEffect(() => {
@@ -279,15 +281,17 @@ function RemoteVideo({ stream, username, reaction, isVideoMuted, isAudioMuted })
     }
   }, [stream]);
 
+  const showVideo = !isVideoMuted || isScreenSharing;
+
   return (
     <div className="video-container">
       <video 
         ref={videoRef} 
         autoPlay 
         playsInline 
-        style={{ display: isVideoMuted ? 'none' : 'block', width: '100%', height: '100%', objectFit: 'cover' }} 
+        style={{ display: showVideo ? 'block' : 'none', width: '100%', height: '100%', objectFit: isScreenSharing ? 'contain' : 'cover' }} 
       />
-      {isVideoMuted && (
+      {!showVideo && (
         <div className="avatar-fallback">
           {username?.charAt(0).toUpperCase()}
         </div>

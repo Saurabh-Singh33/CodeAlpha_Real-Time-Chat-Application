@@ -164,10 +164,13 @@ export default function Room() {
         const nextState = !videoTrack.enabled;
         videoTrack.enabled = nextState;
         setIsVideoMuted(!nextState);
-        socket?.emit('media-state', { isVideoMuted: !nextState, isAudioMuted });
+        socket?.emit('media-state', { isVideoMuted: !nextState, isAudioMuted, isScreenSharing });
       }
     } else {
-      setIsVideoMuted(prev => !prev);
+      setIsVideoMuted(prev => {
+        socket?.emit('media-state', { isVideoMuted: !prev, isAudioMuted, isScreenSharing });
+        return !prev;
+      });
     }
   };
 
@@ -178,10 +181,13 @@ export default function Room() {
         const nextState = !audioTrack.enabled;
         audioTrack.enabled = nextState;
         setIsAudioMuted(!nextState);
-        socket?.emit('media-state', { isVideoMuted, isAudioMuted: !nextState });
+        socket?.emit('media-state', { isVideoMuted, isAudioMuted: !nextState, isScreenSharing });
       }
     } else {
-      setIsAudioMuted(prev => !prev);
+      setIsAudioMuted(prev => {
+        socket?.emit('media-state', { isVideoMuted, isAudioMuted: !prev, isScreenSharing });
+        return !prev;
+      });
     }
   };
   
@@ -197,6 +203,7 @@ export default function Room() {
         
         setIsScreenSharing(true);
         window.dispatchEvent(new CustomEvent('switch-track', { detail: { track: screenTrack } }));
+        socket?.emit('media-state', { isVideoMuted, isAudioMuted, isScreenSharing: true });
       } catch (err) {
         console.error('Error sharing screen:', err);
       }
@@ -213,6 +220,7 @@ export default function Room() {
         window.dispatchEvent(new CustomEvent('switch-track', { detail: { track: videoTrack } }));
       }
     }
+    socket?.emit('media-state', { isVideoMuted, isAudioMuted, isScreenSharing: false });
   };
 
   const toggleRecording = async () => {

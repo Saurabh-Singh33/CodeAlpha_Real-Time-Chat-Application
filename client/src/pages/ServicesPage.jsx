@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, Sparkles, MessageSquare, Globe, MonitorUp, Smartphone, Infinity, Headset, Video, ChevronRight } from 'lucide-react';
+import { AuthContext } from '../context/AuthContext';
 
 export default function ServicesPage() {
+  const { user } = useContext(AuthContext);
   const [currentSlide, setCurrentSlide] = useState(0);
   const slides = [
     '/hero-illustration.png',
@@ -37,12 +39,20 @@ export default function ServicesPage() {
             <Link to="/services" style={{ textDecoration: 'none', color: '#5f6368', fontWeight: '500', transition: 'color 0.2s' }}>Services</Link>
             <Link to="/contact" style={{ textDecoration: 'none', color: '#5f6368', fontWeight: '500', transition: 'color 0.2s' }}>Contact Us</Link>
           </div>
-          <Link to="/login" className="btn-modern-primary">
-            Sign in
-          </Link>
-          <Link to="/signup" className="btn-modern-secondary">
-            Sign up
-          </Link>
+          {user ? (
+            <Link to="/dashboard" className="btn-modern-primary" style={{ textDecoration: 'none' }}>
+              Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link to="/login" className="btn-modern-primary">
+                Sign in
+              </Link>
+              <Link to="/signup" className="btn-modern-secondary">
+                Sign up
+              </Link>
+            </>
+          )}
         </nav>
       </header>
 

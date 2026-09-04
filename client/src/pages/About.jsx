@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { GraduationCap, Briefcase, Headset, Video } from 'lucide-react';
+import { AuthContext } from '../context/AuthContext';
 
 export default function About() {
+  const { user } = useContext(AuthContext);
   return (
     <div style={{ fontFamily: '"Inter", "Roboto", sans-serif', backgroundColor: '#ffffff', color: '#202124', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       
@@ -23,12 +25,20 @@ export default function About() {
             <Link to="/services" style={{ textDecoration: 'none', color: '#5f6368', fontWeight: '500', transition: 'color 0.2s' }}>Services</Link>
             <Link to="/contact" style={{ textDecoration: 'none', color: '#5f6368', fontWeight: '500', transition: 'color 0.2s' }}>Contact Us</Link>
           </div>
-          <Link to="/login" className="btn-modern-primary">
-            Sign in
-          </Link>
-          <Link to="/signup" className="btn-modern-secondary">
-            Sign up
-          </Link>
+          {user ? (
+            <Link to="/dashboard" className="btn-modern-primary" style={{ textDecoration: 'none' }}>
+              Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link to="/login" className="btn-modern-primary">
+                Sign in
+              </Link>
+              <Link to="/signup" className="btn-modern-secondary">
+                Sign up
+              </Link>
+            </>
+          )}
         </nav>
       </header>
 

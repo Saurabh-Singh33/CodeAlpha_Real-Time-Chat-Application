@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Video, LogOut, Copy, Check, X, PlusCircle, Link as LinkIcon, Shield, Users, Bell, Calendar, ChevronDown, Edit2, Trash2, Plus } from 'lucide-react';
+import { Video, LogOut, Copy, Check, X, PlusCircle, Link as LinkIcon, Shield, Users, Bell, Calendar, ChevronDown, Edit2, Trash2, Plus, Home } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import ProfilePanel from '../components/ProfilePanel';
 
@@ -183,15 +183,81 @@ export default function Dashboard() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#F8FAFC' }}>
       <header className="app-header" style={{ background: '#FFFFFF', borderBottom: '1px solid #E5E7EB' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: '700', fontSize: '1.35rem' }}>
-          <div style={{ background: 'linear-gradient(135deg, var(--accent-indigo), var(--accent-violet))', padding: '8px', borderRadius: '12px', display: 'flex' }}>
-            <Video color="white" size={20} />
-          </div>
-          <span style={{ background: 'linear-gradient(135deg, var(--accent-indigo), var(--accent-violet))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            VartaConnect
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+          {/* Clickable Logo */}
+          <Link 
+            to="/" 
+            title="Go to Home"
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.75rem', 
+              fontWeight: '700', 
+              fontSize: '1.35rem',
+              textDecoration: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            <div style={{ background: 'linear-gradient(135deg, var(--accent-indigo), var(--accent-violet))', padding: '8px', borderRadius: '12px', display: 'flex' }}>
+              <Video color="white" size={20} />
+            </div>
+            <span style={{ background: 'linear-gradient(135deg, var(--accent-indigo), var(--accent-violet))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              VartaConnect
+            </span>
+          </Link>
+
+          {/* Prominent Home Navigation Link */}
+          <nav style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <Link 
+              to="/" 
+              title="Return to Home"
+              style={{ 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                gap: '0.45rem', 
+                color: '#4B5563', 
+                textDecoration: 'none', 
+                fontWeight: '600', 
+                fontSize: '0.95rem',
+                padding: '0.45rem 0.85rem',
+                borderRadius: '8px',
+                transition: 'all 0.2s ease',
+                backgroundColor: 'transparent'
+              }}
+              onMouseOver={e => {
+                e.currentTarget.style.color = 'var(--accent-indigo, #1A73E8)';
+                e.currentTarget.style.backgroundColor = '#F1F5F9';
+              }}
+              onMouseOut={e => {
+                e.currentTarget.style.color = '#4B5563';
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              <Home size={18} />
+              <span>Home</span>
+            </Link>
+          </nav>
         </div>
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+          {/* Quick Home Icon button on right side */}
+          <Link 
+            to="/" 
+            className="btn-icon" 
+            title="Home" 
+            style={{ 
+              width: '40px', 
+              height: '40px', 
+              color: '#4B5563', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              textDecoration: 'none'
+            }}
+          >
+            <Home size={18} />
+          </Link>
+
           <button className="btn-icon" title="Notifications" style={{ width: '40px', height: '40px', color: '#4B5563' }}>
             <Bell size={18} />
           </button>

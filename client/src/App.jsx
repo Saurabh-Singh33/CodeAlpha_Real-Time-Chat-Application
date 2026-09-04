@@ -28,15 +28,8 @@ function ProtectedRoute({ children }) {
 function PublicRoute({ children }) {
   const { user, loading } = useContext(AuthContext);
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'white' }}>Loading...</div>;
-  if (user) return <Navigate to="/" />;
+  if (user) return <Navigate to="/dashboard" />;
   return children;
-}
-
-function HomeRoute() {
-  const { user, loading } = useContext(AuthContext);
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'var(--text-primary)' }}>Loading...</div>;
-  if (user) return <Dashboard />;
-  return <Landing />;
 }
 
 function App() {
@@ -59,7 +52,15 @@ function App() {
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/ai-chatbot" element={<AiChatbotPage />} />
                 
-                <Route path="/" element={<HomeRoute />} />
+                <Route path="/" element={<Landing />} />
+                <Route 
+                  path="/dashboard" 
+                  element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  } 
+                />
                 <Route 
                   path="/room/:roomId" 
                   element={

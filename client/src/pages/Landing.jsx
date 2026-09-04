@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { X, Info } from 'lucide-react';
+import { AuthContext } from '../context/AuthContext';
 import Login from './Login';
 import Signup from './Signup';
 
@@ -8,6 +9,7 @@ export default function Landing() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showSignupModal, setShowSignupModal] = useState(false);
   const [joinCode, setJoinCode] = useState('');
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -67,16 +69,28 @@ export default function Landing() {
             <Link to="/contact" className="nav-link-item">Contact Us</Link>
           </div>
           
-          <button 
-            onClick={() => setShowLoginModal(true)} 
-            className="btn-modern-primary">
-            Sign in
-          </button>
-          <button 
-            onClick={() => setShowSignupModal(true)} 
-            className="btn-modern-secondary">
-            Sign up
-          </button>
+          {user ? (
+            <Link 
+              to="/dashboard" 
+              className="btn-modern-primary"
+              style={{ textDecoration: 'none' }}
+            >
+              Go to Dashboard
+            </Link>
+          ) : (
+            <>
+              <button 
+                onClick={() => setShowLoginModal(true)} 
+                className="btn-modern-primary">
+                Sign in
+              </button>
+              <button 
+                onClick={() => setShowSignupModal(true)} 
+                className="btn-modern-secondary">
+                Sign up
+              </button>
+            </>
+          )}
         </div>
       </nav>
 
@@ -111,12 +125,21 @@ export default function Landing() {
           
           {/* Dual CTAs */}
           <div style={{ display: 'flex', gap: '1rem', marginBottom: '3rem' }}>
-            <button 
-              className="btn-glow-blue"
-              onClick={() => setShowLoginModal(true)} 
-              style={{ background: '#1A73E8', color: '#FFFFFF', border: 'none', borderRadius: '8px', padding: '0.9rem 1.8rem', fontSize: '1.05rem', fontWeight: '600', cursor: 'pointer' }}>
-              Sign in
-            </button>
+            {user ? (
+              <Link 
+                to="/dashboard" 
+                className="btn-glow-blue"
+                style={{ background: '#1A73E8', color: '#FFFFFF', border: 'none', borderRadius: '8px', padding: '0.9rem 1.8rem', fontSize: '1.05rem', fontWeight: '600', textDecoration: 'none', display: 'inline-block' }}>
+                Go to Dashboard
+              </Link>
+            ) : (
+              <button 
+                className="btn-glow-blue"
+                onClick={() => setShowLoginModal(true)} 
+                style={{ background: '#1A73E8', color: '#FFFFFF', border: 'none', borderRadius: '8px', padding: '0.9rem 1.8rem', fontSize: '1.05rem', fontWeight: '600', cursor: 'pointer' }}>
+                Sign in
+              </button>
+            )}
             <button 
               className="btn-outline-glow"
               style={{ background: '#FFFFFF', color: '#1A73E8', border: '2px solid #dadce0', borderRadius: '8px', padding: '0.9rem 1.8rem', fontSize: '1.05rem', fontWeight: '600', cursor: 'pointer' }}>

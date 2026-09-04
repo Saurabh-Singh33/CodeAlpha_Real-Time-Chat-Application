@@ -52,7 +52,7 @@ export default function VerifyOtp() {
       const data = await res.json();
       if (res.ok) {
         await checkAuth(); // Logs in the user via HTTP-only cookie
-        navigate('/');
+        navigate('/dashboard');
       } else {
         setError(data.message || 'OTP Verification failed');
       }

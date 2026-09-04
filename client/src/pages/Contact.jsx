@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { Video, ChevronRight, Mail, Phone, ChevronDown, CheckCircle, AlertCircle, MessageCircle } from 'lucide-react';
+import { AuthContext } from '../context/AuthContext';
 
 export default function Contact() {
+  const { user } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -86,12 +88,20 @@ export default function Contact() {
             <Link to="/services" style={{ textDecoration: 'none', color: '#5f6368', fontWeight: '500', transition: 'color 0.2s' }}>Services</Link>
             <Link to="/contact" style={{ textDecoration: 'none', color: '#5f6368', fontWeight: '500', transition: 'color 0.2s' }}>Contact Us</Link>
           </div>
-          <Link to="/login" className="btn-modern-primary">
-            Sign in
-          </Link>
-          <Link to="/signup" className="btn-modern-secondary">
-            Sign up
-          </Link>
+          {user ? (
+            <Link to="/dashboard" className="btn-modern-primary" style={{ textDecoration: 'none' }}>
+              Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link to="/login" className="btn-modern-primary">
+                Sign in
+              </Link>
+              <Link to="/signup" className="btn-modern-secondary">
+                Sign up
+              </Link>
+            </>
+          )}
         </nav>
       </header>
 

@@ -282,7 +282,7 @@ export default function Room() {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
-    navigate('/');
+    navigate('/dashboard');
   };
 
   const copyRoomLink = () => {
@@ -377,7 +377,7 @@ export default function Room() {
           <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.9rem', lineHeight: '1.5' }}>
             The meeting code you entered is invalid or has expired.
           </p>
-          <button className="btn btn-primary" onClick={() => navigate('/')} style={{ width: '100%' }}>
+          <button className="btn btn-primary" onClick={() => navigate('/dashboard')} style={{ width: '100%' }}>
             Return to Dashboard
           </button>
         </div>

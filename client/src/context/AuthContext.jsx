@@ -1,10 +1,12 @@
 import React, { createContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const serverUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : `${window.location.protocol}//${window.location.hostname}:5000`;
 
@@ -37,13 +39,17 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+      localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
       await fetch(`${serverUrl}/api/auth/logout`, {
         method: 'POST',
         credentials: 'include'
       });
-      setUser(null);
     } catch (err) {
       console.error('Logout failed', err);
+    } finally {
+      setUser(null);
+      navigate('/', { replace: true });
     }
   };
 

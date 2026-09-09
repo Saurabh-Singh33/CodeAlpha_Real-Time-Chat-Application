@@ -81,7 +81,7 @@ export default function Login({ isModal, onSuccess }) {
         {/* Left Side: Mascot Image with Back Button */}
         <div className="auth-mascot-container">
           <button 
-            onClick={() => { if(isModal && onSuccess) { onSuccess(); } else { window.location.href = '/'; } }} 
+            onClick={() => { if(isModal && onSuccess) { onSuccess(); } else { navigate('/'); } }} 
             style={{ position: 'absolute', top: '1.5rem', left: '1.5rem', background: 'rgba(255, 255, 255, 0.9)', border: 'none', padding: '0.5rem 1rem', borderRadius: '20px', cursor: 'pointer', fontWeight: '600', color: '#1A73E8', display: 'flex', alignItems: 'center', gap: '0.5rem', zIndex: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>

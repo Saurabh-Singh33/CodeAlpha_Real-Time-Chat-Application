@@ -23,6 +23,12 @@ export default function Dashboard() {
   
   const { user, logout } = useContext(AuthContext);
   const [currentUser, setCurrentUser] = useState(user);
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/', { replace: true });
+  };
 
   useEffect(() => {
     setCurrentUser(user);
@@ -30,8 +36,6 @@ export default function Dashboard() {
       fetchMeetings();
     }
   }, [user]);
-
-  const navigate = useNavigate();
 
   const getServerUrl = () => {
     return window.location.hostname === 'localhost' 
@@ -271,7 +275,7 @@ export default function Dashboard() {
               <ChevronDown size={16} color="#6B7280" />
             </span>
           </div>
-          <button className="btn-icon" onClick={logout} title="Logout" style={{ width: '40px', height: '40px', color: '#4B5563' }}>
+          <button className="btn-icon" onClick={handleLogout} title="Logout" style={{ width: '40px', height: '40px', color: '#4B5563' }}>
             <LogOut size={18} />
           </button>
         </div>

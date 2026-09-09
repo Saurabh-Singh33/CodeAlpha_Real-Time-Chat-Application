@@ -14,12 +14,17 @@ export default function Landing() {
   const location = useLocation();
 
   useEffect(() => {
-    if (location.pathname === '/login' || location.state?.from) {
+    if (location.pathname === '/login') {
       setShowLoginModal(true);
+      setShowSignupModal(false);
     } else if (location.pathname === '/signup') {
       setShowSignupModal(true);
+      setShowLoginModal(false);
+    } else {
+      setShowLoginModal(false);
+      setShowSignupModal(false);
     }
-  }, [location.pathname, location.state]);
+  }, [location.pathname]);
 
   const handleJoin = (e) => {
     e.preventDefault();

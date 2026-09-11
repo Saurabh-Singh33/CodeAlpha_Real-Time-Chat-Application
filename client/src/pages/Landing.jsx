@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { X, Info } from 'lucide-react';
+import { X, Info, LayoutDashboard, ArrowRight } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import Login from './Login';
 import Signup from './Signup';
@@ -43,18 +43,18 @@ export default function Landing() {
         {`
           .btn-glow-blue {
             transition: all 0.2s ease;
-            box-shadow: 0 0 15px rgba(26, 115, 232, 0.25);
+            box-shadow: 0 4px 15px rgba(26, 115, 232, 0.3);
           }
           .btn-glow-blue:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 25px rgba(26, 115, 232, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(26, 115, 232, 0.45);
           }
           .btn-outline-glow {
             transition: all 0.2s ease;
           }
           .btn-outline-glow:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 15px rgba(26, 115, 232, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(26, 115, 232, 0.15);
             background: rgba(26, 115, 232, 0.04) !important;
           }
         `}
@@ -62,7 +62,7 @@ export default function Landing() {
       {/* Header */}
       <nav className="landing-nav" style={{ position: 'sticky', top: 0, zIndex: 100, padding: '1rem 3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FFFFFF', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)' }}>
         <div style={{ display: 'flex', alignItems: 'center', paddingLeft: '1rem' }}>
-          <Link to="/" className="logo-placeholder" style={{ display: 'flex', alignItems: 'center', background: 'transparent', textDecoration: 'none', cursor: 'pointer' }}>
+          <Link to="/" className="logo-placeholder" style={{ display: 'flex', alignItems: 'center', background: 'transparent', textDecoration: 'none', cursor: 'pointer', boxShadow: 'none' }}>
             <span style={{ fontSize: '1.6rem', background: 'linear-gradient(135deg, #1A73E8 0%, #174ea6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: '800', letterSpacing: '-0.5px' }}>VartaConnect</span>
           </Link>
         </div>
@@ -77,10 +77,10 @@ export default function Landing() {
           {user ? (
             <Link 
               to="/dashboard" 
-              className="btn-modern-primary"
-              style={{ textDecoration: 'none' }}
+              className="btn-dashboard-primary"
             >
-              Go to Dashboard
+              <LayoutDashboard size={18} />
+              <span>Go to Dashboard</span>
             </Link>
           ) : (
             <>
@@ -119,7 +119,7 @@ export default function Landing() {
         <div className="hero-text" style={{ flex: '1', maxWidth: '600px', textAlign: 'left', position: 'relative', zIndex: 1 }}>
           
           {/* New Badge */}
-          <div style={{ display: 'inline-block', background: '#e6f4ea', color: '#137333', padding: '4px 12px', borderRadius: '16px', fontSize: '0.8rem', fontWeight: '700', marginBottom: '1.5rem', letterSpacing: '0.5px' }}>
+          <div style={{ display: 'inline-block', background: '#e8f0fe', color: '#1A73E8', padding: '5px 14px', borderRadius: '16px', fontSize: '0.8rem', fontWeight: '700', marginBottom: '1.5rem', letterSpacing: '0.5px' }}>
             NEW
           </div>
           
@@ -133,21 +133,24 @@ export default function Landing() {
             {user ? (
               <Link 
                 to="/dashboard" 
-                className="btn-glow-blue"
-                style={{ background: '#1A73E8', color: '#FFFFFF', border: 'none', borderRadius: '8px', padding: '0.9rem 1.8rem', fontSize: '1.05rem', fontWeight: '600', textDecoration: 'none', display: 'inline-block' }}>
-                Go to Dashboard
+                className="btn-dashboard-primary"
+                style={{ padding: '0.9rem 1.8rem', fontSize: '1.05rem', borderRadius: '10px' }}>
+                <LayoutDashboard size={20} />
+                <span>Go to Dashboard</span>
+                <ArrowRight size={18} />
               </Link>
             ) : (
               <button 
-                className="btn-glow-blue"
+                className="btn-dashboard-primary"
                 onClick={() => setShowLoginModal(true)} 
-                style={{ background: '#1A73E8', color: '#FFFFFF', border: 'none', borderRadius: '8px', padding: '0.9rem 1.8rem', fontSize: '1.05rem', fontWeight: '600', cursor: 'pointer' }}>
-                Sign in
+                style={{ padding: '0.9rem 1.8rem', fontSize: '1.05rem', borderRadius: '10px', cursor: 'pointer' }}>
+                <span>Sign in</span>
+                <ArrowRight size={18} />
               </button>
             )}
             <button 
               className="btn-outline-glow"
-              style={{ background: '#FFFFFF', color: '#1A73E8', border: '2px solid #dadce0', borderRadius: '8px', padding: '0.9rem 1.8rem', fontSize: '1.05rem', fontWeight: '600', cursor: 'pointer' }}>
+              style={{ background: '#FFFFFF', color: '#1A73E8', border: '2px solid #dadce0', borderRadius: '10px', padding: '0.9rem 1.8rem', fontSize: '1.05rem', fontWeight: '600', cursor: 'pointer' }}>
               Try Meet for work
             </button>
           </div>

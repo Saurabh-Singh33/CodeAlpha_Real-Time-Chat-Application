@@ -42,20 +42,18 @@ export default function Landing() {
       <style>
         {`
           .btn-glow-blue {
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 15px rgba(26, 115, 232, 0.3);
+            box-shadow: none;
           }
           .btn-glow-blue:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(26, 115, 232, 0.45);
+            transform: none;
+            box-shadow: none;
           }
           .btn-outline-glow {
-            transition: all 0.2s ease;
+            box-shadow: none;
           }
           .btn-outline-glow:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(26, 115, 232, 0.15);
-            background: rgba(26, 115, 232, 0.04) !important;
+            transform: none;
+            box-shadow: none;
           }
         `}
       </style>
@@ -134,23 +132,23 @@ export default function Landing() {
               <Link 
                 to="/dashboard" 
                 className="btn-dashboard-primary"
-                style={{ padding: '0.9rem 1.8rem', fontSize: '1.05rem', borderRadius: '10px' }}>
-                <LayoutDashboard size={20} />
+                style={{ padding: '0.6rem 1.25rem', fontSize: '0.95rem', borderRadius: '6px' }}>
+                <LayoutDashboard size={18} />
                 <span>Go to Dashboard</span>
-                <ArrowRight size={18} />
+                <ArrowRight size={16} />
               </Link>
             ) : (
               <button 
                 className="btn-dashboard-primary"
                 onClick={() => setShowLoginModal(true)} 
-                style={{ padding: '0.9rem 1.8rem', fontSize: '1.05rem', borderRadius: '10px', cursor: 'pointer' }}>
+                style={{ padding: '0.6rem 1.25rem', fontSize: '0.95rem', borderRadius: '6px', cursor: 'pointer' }}>
                 <span>Sign in</span>
-                <ArrowRight size={18} />
+                <ArrowRight size={16} />
               </button>
             )}
             <button 
               className="btn-outline-glow"
-              style={{ background: '#FFFFFF', color: '#1A73E8', border: '2px solid #dadce0', borderRadius: '10px', padding: '0.9rem 1.8rem', fontSize: '1.05rem', fontWeight: '600', cursor: 'pointer' }}>
+              style={{ background: '#FFFFFF', color: '#374151', border: '1px solid #d1d5db', borderRadius: '6px', padding: '0.6rem 1.25rem', fontSize: '0.95rem', fontWeight: '500', cursor: 'pointer' }}>
               Try Meet for work
             </button>
           </div>

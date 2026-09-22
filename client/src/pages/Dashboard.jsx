@@ -244,24 +244,6 @@ export default function Dashboard() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-          {/* Quick Home Icon button on right side */}
-          <Link 
-            to="/" 
-            className="btn-icon" 
-            title="Home" 
-            style={{ 
-              width: '40px', 
-              height: '40px', 
-              color: '#4B5563', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              textDecoration: 'none'
-            }}
-          >
-            <Home size={18} />
-          </Link>
-
           <button className="btn-icon" title="Notifications" style={{ width: '40px', height: '40px', color: '#4B5563' }}>
             <Bell size={18} />
           </button>

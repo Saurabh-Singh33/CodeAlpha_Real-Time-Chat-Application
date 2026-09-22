@@ -6,7 +6,7 @@ import {
   Trash2, Download, Eraser, Edit2, Type, Square, Circle, Triangle, 
   Minus, ArrowRight, Highlighter, Image as ImageIcon, MousePointer2, 
   Hand, ZoomIn, ZoomOut, Undo, Redo, Plus, ChevronRight, ChevronLeft, Target,
-  Lock, Unlock, Send
+  Lock, Unlock, Send, Star, ChevronDown
 } from 'lucide-react';
 
 export default function Whiteboard({ roomId, isHost }) {
@@ -39,7 +39,93 @@ export default function Whiteboard({ roomId, isHost }) {
   const isPanning = useRef(false);
   const lastPanCoords = useRef({ x: 0, y: 0 });
 
+  const shapesDropdownRef = useRef(null);
+
   const colors = ['#000000', '#3b82f6', '#10b981', '#f43f5e', '#8b5cf6', '#f59e0b', '#ffffff'];
+
+  // Helper to build a Fabric Path for Arrow (Line + Pointer Arrowhead)
+  const createArrowPath = (x1, y1, x2, y2, strokeColor, strokeWidth) => {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const angle = Math.atan2(dy, dx);
+    const headLength = Math.max(12, strokeWidth * 3.5);
+    const headAngle = Math.PI / 6; // 30 degrees
+
+    const hx1 = x2 - headLength * Math.cos(angle - headAngle);
+    const hy1 = y2 - headLength * Math.sin(angle - headAngle);
+    const hx2 = x2 - headLength * Math.cos(angle + headAngle);
+    const hy2 = y2 - headLength * Math.sin(angle + headAngle);
+
+    const pathData = `M ${x1} ${y1} L ${x2} ${y2} M ${hx1} ${hy1} L ${x2} ${y2} L ${hx2} ${hy2}`;
+
+    return new fabric.Path(pathData, {
+      stroke: strokeColor,
+      strokeWidth: strokeWidth,
+      fill: 'transparent',
+      strokeLineCap: 'round',
+      strokeLineJoin: 'round'
+    });
+  };
+
+  // Helper to build a Fabric Path for Star
+  const createStarPath = (cx, cy, outerRadius, innerRadius, strokeColor, strokeWidth) => {
+    const points = 5;
+    const step = Math.PI / points;
+    let pathStr = '';
+    
+    for (let i = 0; i < 2 * points; i++) {
+      const r = (i % 2 === 0) ? outerRadius : innerRadius;
+      const a = i * step - Math.PI / 2;
+      const x = cx + r * Math.cos(a);
+      const y = cy + r * Math.sin(a);
+      if (i === 0) {
+        pathStr += `M ${x} ${y} `;
+      } else {
+        pathStr += `L ${x} ${y} `;
+      }
+    }
+    pathStr += 'Z';
+
+    return new fabric.Path(pathStr, {
+      fill: 'transparent',
+      stroke: strokeColor,
+      strokeWidth: strokeWidth,
+      strokeLineCap: 'round',
+      strokeLineJoin: 'round'
+    });
+  };
+
+  // Close shapes dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (shapesDropdownRef.current && !shapesDropdownRef.current.contains(e.target)) {
+        setShowShapes(false);
+      }
+    };
+    if (showShapes) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showShapes]);
+
+  const shapeItemStyle = (isSelected) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '6px 10px',
+    borderRadius: '6px',
+    border: 'none',
+    background: isSelected ? '#EEF2FF' : 'transparent',
+    color: isSelected ? '#2563EB' : '#374151',
+    fontWeight: isSelected ? '600' : '400',
+    fontSize: '0.85rem',
+    cursor: 'pointer',
+    textAlign: 'left',
+    width: '100%',
+    transition: 'background 0.15s ease'
+  });
 
   // --- INIT LOCAL STORAGE ---
   useEffect(() => {
@@ -327,7 +413,7 @@ export default function Whiteboard({ roomId, isHost }) {
         isMouseDown = false;
       });
     }
-    else if (['rect', 'circle', 'triangle', 'line', 'arrow'].includes(currentTool)) {
+    else if (['rect', 'circle', 'triangle', 'line', 'arrow', 'star'].includes(currentTool)) {
       canvas.defaultCursor = 'crosshair';
       
       canvas.on('mouse:down', (e) => {
@@ -354,10 +440,14 @@ export default function Whiteboard({ roomId, isHost }) {
             left: pointer.x, top: pointer.y, width: 0, height: 0,
             fill: 'transparent', stroke: strokeColor, strokeWidth: strokeW
           });
-        } else if (currentTool === 'line' || currentTool === 'arrow') {
+        } else if (currentTool === 'line') {
           shape = new fabric.Line([pointer.x, pointer.y, pointer.x, pointer.y], {
             stroke: strokeColor, strokeWidth: strokeW
           });
+        } else if (currentTool === 'arrow') {
+          shape = createArrowPath(pointer.x, pointer.y, pointer.x + 1, pointer.y + 1, strokeColor, strokeW);
+        } else if (currentTool === 'star') {
+          shape = createStarPath(pointer.x, pointer.y, 0.1, 0.05, strokeColor, strokeW);
         }
         
         currentShapeRef.current = shape;
@@ -377,8 +467,24 @@ export default function Whiteboard({ roomId, isHost }) {
           const radius = Math.max(Math.abs(start.x - pointer.x), Math.abs(start.y - pointer.y)) / 2;
           shape.set({ radius });
           shape.set({ left: Math.min(start.x, pointer.x), top: Math.min(start.y, pointer.y) });
-        } else if (currentTool === 'line' || currentTool === 'arrow') {
+        } else if (currentTool === 'line') {
           shape.set({ x2: pointer.x, y2: pointer.y });
+        } else if (currentTool === 'arrow') {
+          canvas.remove(shape);
+          const newArrow = createArrowPath(start.x, start.y, pointer.x, pointer.y, currentColor, currentWidth);
+          currentShapeRef.current = newArrow;
+          canvas.add(newArrow);
+        } else if (currentTool === 'star') {
+          canvas.remove(shape);
+          const dx = Math.abs(start.x - pointer.x);
+          const dy = Math.abs(start.y - pointer.y);
+          const outerR = Math.max(dx, dy) / 2;
+          const innerR = outerR / 2.5;
+          const cx = Math.min(start.x, pointer.x) + outerR;
+          const cy = Math.min(start.y, pointer.y) + outerR;
+          const newStar = createStarPath(cx, cy, outerR, innerR, currentColor, currentWidth);
+          currentShapeRef.current = newStar;
+          canvas.add(newStar);
         }
         canvas.renderAll();
       });
@@ -472,7 +578,7 @@ export default function Whiteboard({ roomId, isHost }) {
   };
 
   const clearBoard = () => {
-    if (!canvasRef.current) return;
+    if (!isHost || !canvasRef.current) return;
     canvasRef.current.clear();
     canvasRef.current.backgroundColor = '#ffffff';
     saveState();
@@ -588,31 +694,71 @@ export default function Whiteboard({ roomId, isHost }) {
             
             <div style={{ borderLeft: '1px solid #d1d5db', height: '24px', margin: '0 4px' }}></div>
             
-            <div style={{ position: 'relative' }}>
+            <div ref={shapesDropdownRef} style={{ position: 'relative' }}>
               <button 
-                className={`feature-btn ${['rect', 'circle', 'triangle', 'line', 'arrow'].includes(tool) ? 'active' : ''}`} 
-                onClick={() => setShowShapes(!showShapes)}
-                title="Shapes"
+                className={`feature-btn ${['rect', 'circle', 'triangle', 'line', 'arrow', 'star'].includes(tool) || showShapes ? 'active' : ''}`} 
+                onClick={() => setShowShapes(prev => !prev)}
+                title="Shapes Menu"
+                style={{ display: 'flex', alignItems: 'center', gap: '3px' }}
               >
                 {tool === 'circle' ? <Circle size={16} /> :
                  tool === 'triangle' ? <Triangle size={16} /> :
                  tool === 'line' ? <Minus size={16} /> :
                  tool === 'arrow' ? <ArrowRight size={16} /> :
+                 tool === 'star' ? <Star size={16} /> :
                  <Square size={16} />}
+                <ChevronDown size={12} />
               </button>
               
               {showShapes && (
                 <div style={{ 
-                  position: 'absolute', top: '100%', left: 0, marginTop: '4px',
-                  background: 'var(--rm-panel)', border: '1px solid var(--rm-border)', 
-                  borderRadius: '8px', padding: '4px', display: 'flex', flexDirection: 'column', gap: '4px', zIndex: 50,
-                  boxShadow: 'var(--rm-shadow)'
+                  position: 'absolute', top: '100%', left: 0, marginTop: '6px',
+                  background: '#FFFFFF', border: '1px solid #E5E7EB', 
+                  borderRadius: '8px', padding: '6px', display: 'flex', flexDirection: 'column', gap: '4px', zIndex: 100,
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.12)', minWidth: '130px'
                 }}>
-                  <button className={`feature-btn ${tool === 'rect' ? 'active' : ''}`} onClick={() => { setTool('rect'); setShowShapes(false); }} title="Rectangle"><Square size={16} /></button>
-                  <button className={`feature-btn ${tool === 'circle' ? 'active' : ''}`} onClick={() => { setTool('circle'); setShowShapes(false); }} title="Circle"><Circle size={16} /></button>
-                  <button className={`feature-btn ${tool === 'triangle' ? 'active' : ''}`} onClick={() => { setTool('triangle'); setShowShapes(false); }} title="Triangle"><Triangle size={16} /></button>
-                  <button className={`feature-btn ${tool === 'line' ? 'active' : ''}`} onClick={() => { setTool('line'); setShowShapes(false); }} title="Line"><Minus size={16} /></button>
-                  <button className={`feature-btn ${tool === 'arrow' ? 'active' : ''}`} onClick={() => { setTool('arrow'); setShowShapes(false); }} title="Arrow"><ArrowRight size={16} /></button>
+                  <button 
+                    onClick={() => { setTool('rect'); setShowShapes(false); }} 
+                    style={shapeItemStyle(tool === 'rect')}
+                    title="Rectangle"
+                  >
+                    <Square size={15} /> <span>Rectangle</span>
+                  </button>
+                  <button 
+                    onClick={() => { setTool('circle'); setShowShapes(false); }} 
+                    style={shapeItemStyle(tool === 'circle')}
+                    title="Circle"
+                  >
+                    <Circle size={15} /> <span>Circle</span>
+                  </button>
+                  <button 
+                    onClick={() => { setTool('triangle'); setShowShapes(false); }} 
+                    style={shapeItemStyle(tool === 'triangle')}
+                    title="Triangle"
+                  >
+                    <Triangle size={15} /> <span>Triangle</span>
+                  </button>
+                  <button 
+                    onClick={() => { setTool('line'); setShowShapes(false); }} 
+                    style={shapeItemStyle(tool === 'line')}
+                    title="Line"
+                  >
+                    <Minus size={15} /> <span>Line</span>
+                  </button>
+                  <button 
+                    onClick={() => { setTool('arrow'); setShowShapes(false); }} 
+                    style={shapeItemStyle(tool === 'arrow')}
+                    title="Arrow"
+                  >
+                    <ArrowRight size={15} /> <span>Arrow</span>
+                  </button>
+                  <button 
+                    onClick={() => { setTool('star'); setShowShapes(false); }} 
+                    style={shapeItemStyle(tool === 'star')}
+                    title="Star"
+                  >
+                    <Star size={15} /> <span>Star</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -680,9 +826,11 @@ export default function Whiteboard({ roomId, isHost }) {
               <input type="file" style={{ display: 'none' }} accept="image/*" onChange={handleImageUpload} />
             </label>
             
-            <button className="btn btn-danger" onClick={clearBoard} style={{ padding: '6px 12px', fontSize: '0.8rem' }} title="Clear Board">
-              <Trash2 size={15} /> Clear
-            </button>
+            {isHost && (
+              <button className="btn btn-danger" onClick={clearBoard} style={{ padding: '6px 12px', fontSize: '0.8rem' }} title="Clear Board">
+                <Trash2 size={15} /> Clear
+              </button>
+            )}
           </div>
         </div>
       )}

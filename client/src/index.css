@@ -1036,25 +1036,25 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .message {
-  padding: 0;
-  border-radius: 0;
-  background: transparent;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background-color: #F8FAFC;
   font-size: 0.875rem;
   line-height: 1.45;
   color: #1F2937;
-  border: none;
-  box-shadow: none;
-  max-width: 100%;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  max-width: 85%;
   word-break: break-word;
 }
 
 .message.self {
-  background: transparent;
+  background-color: #F1F5F9;
   color: #1F2937;
   align-self: flex-end;
-  text-align: right;
-  border: none;
-  box-shadow: none;
+  text-align: left;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 .chat-input {
@@ -1470,9 +1470,9 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Modern Action Buttons */
 .btn-modern-primary {
-  background-color: #2563eb;
-  color: #FFFFFF !important;
-  border: 1px solid #2563eb;
+  background-color: #F3F4F6;
+  color: #1F2937 !important;
+  border: 1px solid #D1D5DB;
   border-radius: 6px;
   padding: 0 1rem;
   font-weight: 500;
@@ -1486,11 +1486,13 @@ h1, h2, h3, h4, h5, h6 {
   height: 36px;
   box-sizing: border-box;
   box-shadow: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .btn-modern-primary:hover {
-  background-color: #2563eb;
-  border-color: #2563eb;
+  background-color: #E5E7EB;
+  border-color: #9CA3AF;
+  color: #111827 !important;
   box-shadow: none;
   transform: none;
 }
@@ -1502,7 +1504,7 @@ h1, h2, h3, h4, h5, h6 {
 .btn-modern-secondary {
   background-color: #FFFFFF;
   color: #374151 !important;
-  border: 1px solid #d1d5db;
+  border: 1px solid #D1D5DB;
   border-radius: 6px;
   padding: 0 1rem;
   font-weight: 500;
@@ -1515,12 +1517,13 @@ h1, h2, h3, h4, h5, h6 {
   height: 36px;
   box-sizing: border-box;
   box-shadow: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .btn-modern-secondary:hover {
-  background-color: #FFFFFF;
-  border-color: #d1d5db;
-  color: #374151 !important;
+  background-color: #F3F4F6;
+  border-color: #9CA3AF;
+  color: #111827 !important;
   transform: none;
   box-shadow: none;
 }

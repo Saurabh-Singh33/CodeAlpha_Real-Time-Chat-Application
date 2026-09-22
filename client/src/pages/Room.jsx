@@ -538,7 +538,13 @@ export default function Room() {
             </button>
           </div>
           
-          {sidePanel === 'chat' && <Chat roomId={roomId} chatEnabled={chatEnabled} />}
+          {sidePanel === 'chat' && (
+            <Chat 
+              roomId={roomId} 
+              chatEnabled={chatEnabled} 
+              currentUser={user?.name || user?.username} 
+            />
+          )}
           
           {sidePanel === 'users' && (
             <div style={{ padding: '1.25rem', color: 'var(--rm-text-primary)', display: 'flex', flexDirection: 'column', gap: '0.75rem', overflowY: 'auto', flex: 1 }}>

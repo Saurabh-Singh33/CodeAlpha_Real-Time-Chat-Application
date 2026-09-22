@@ -7,6 +7,7 @@ const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/auth');
 const meetingRoutes = require('./routes/meetings');
 const Room = require('./models/Room');
+const Message = require('./models/Message');
 const connectDB = require('./config/db');
 const { sendMeetingInvite, sendContactEmail } = require('./mailer');
 
@@ -25,6 +26,18 @@ app.use(cookieParser());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/meetings', meetingRoutes);
+
+// API to fetch room messages from MongoDB
+app.get('/api/messages/:roomId', async (req, res) => {
+  const { roomId } = req.params;
+  try {
+    const messages = await Message.find({ roomId }).sort({ createdAt: 1 });
+    res.json({ success: true, messages });
+  } catch (err) {
+    console.error('Error fetching room messages:', err);
+    res.status(500).json({ error: 'Failed to fetch messages' });
+  }
+});
 
 // API to send room invite via email
 app.post('/api/rooms/invite', async (req, res) => {
@@ -172,17 +185,51 @@ io.on('connection', (socket) => {
     });
   });
 
-  // Chat
-  socket.on('chat-message', (messageObj) => {
+  // Chat - Persist to MongoDB Atlas and Broadcast
+  socket.on('chat-message', async (messageObj) => {
     const targetRoomId = messageObj.roomId || socket.roomId;
     if (!targetRoomId) return;
+
+    const senderName = socket.username || messageObj.sender || 'Anonymous';
     
-    io.to(targetRoomId).emit('chat-message', {
-      sender: socket.username,
-      senderId: socket.id,
-      ...messageObj,
-      timestamp: new Date().toISOString()
-    });
+    try {
+      const savedMessage = await Message.create({
+        roomId: targetRoomId,
+        sender: senderName,
+        senderId: socket.id,
+        type: messageObj.type || 'text',
+        text: messageObj.text || '',
+        fileData: messageObj.fileData || null,
+        fileName: messageObj.fileName || null,
+        fileType: messageObj.fileType || null,
+        fileSize: messageObj.fileSize || null,
+        timestamp: new Date()
+      });
+
+      io.to(targetRoomId).emit('chat-message', {
+        _id: savedMessage._id,
+        sender: savedMessage.sender,
+        senderId: savedMessage.senderId,
+        type: savedMessage.type,
+        text: savedMessage.text,
+        fileData: savedMessage.fileData,
+        fileName: savedMessage.fileName,
+        fileType: savedMessage.fileType,
+        fileSize: savedMessage.fileSize,
+        timestamp: savedMessage.timestamp,
+        createdAt: savedMessage.createdAt,
+        roomId: targetRoomId
+      });
+    } catch (err) {
+      console.error('Error saving message to MongoDB Atlas:', err);
+      // Fallback real-time broadcast if DB save encounters an error
+      io.to(targetRoomId).emit('chat-message', {
+        sender: senderName,
+        senderId: socket.id,
+        ...messageObj,
+        timestamp: new Date().toISOString()
+      });
+    }
   });
 
   // Whiteboard & Tab Sync

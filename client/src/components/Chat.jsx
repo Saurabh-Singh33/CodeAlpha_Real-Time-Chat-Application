@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import { SocketContext } from '../context/SocketContext';
 import { Send, Paperclip, Download, X } from 'lucide-react';
 
-export default function Chat({ roomId, chatEnabled = true }) {
+export default function Chat({ roomId, chatEnabled = true, currentUser = '' }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
@@ -10,11 +10,41 @@ export default function Chat({ roomId, chatEnabled = true }) {
   const chatContainerRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  // Fetch non-expired chat history from MongoDB Atlas
+  useEffect(() => {
+    if (!roomId) return;
+
+    let isMounted = true;
+    const fetchChatHistory = async () => {
+      try {
+        const serverUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : `${window.location.protocol}//${window.location.hostname}:5000`;
+        const res = await fetch(`${serverUrl}/api/messages/${roomId}`);
+        const data = await res.json();
+        if (isMounted && data.success && Array.isArray(data.messages)) {
+          setMessages(data.messages);
+        }
+      } catch (err) {
+        console.error('Failed to fetch chat history:', err);
+      }
+    };
+
+    fetchChatHistory();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [roomId]);
+
   useEffect(() => {
     if (!socket) return;
 
     const handleMessage = (message) => {
-      setMessages(prev => [...prev, message]);
+      setMessages(prev => {
+        if (message._id && prev.some(m => m._id === message._id)) {
+          return prev;
+        }
+        return [...prev, message];
+      });
     };
 
     socket.on('chat-message', handleMessage);
@@ -88,7 +118,7 @@ export default function Chat({ roomId, chatEnabled = true }) {
           </div>
         ) : (
           messages.map((msg, index) => {
-            const isSelf = msg.senderId === socket?.id;
+            const isSelf = msg.senderId === socket?.id || (currentUser && msg.sender === currentUser);
             const isImage = msg.fileType && msg.fileType.startsWith('image/');
             return (
               <div key={index} style={{ 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, Calendar, X, Camera } from 'lucide-react';
 
 const ProfilePanel = ({ isOpen, onClose, user, onUpdate }) => {
+  const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -14,23 +15,43 @@ const ProfilePanel = ({ isOpen, onClose, user, onUpdate }) => {
   useEffect(() => {
     if (user) {
       setFormData({
-        name: user.name || '',
+        name: user.name || user.username || '',
         email: user.email || '',
         mobileNumber: user.mobileNumber || '',
         dob: user.dob || '',
         sex: user.sex || ''
       });
     }
-  }, [user]);
+    setIsEditing(false);
+  }, [user, isOpen]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleEditClick = (e) => {
+    e.preventDefault();
+    setIsEditing(true);
+  };
 
+  const handleCancel = (e) => {
+    e.preventDefault();
+    if (user) {
+      setFormData({
+        name: user.name || user.username || '',
+        email: user.email || '',
+        mobileNumber: user.mobileNumber || '',
+        dob: user.dob || '',
+        sex: user.sex || ''
+      });
+    }
+    setIsEditing(false);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isEditing) return;
+
     setLoading(true);
     try {
       const serverUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : `${window.location.protocol}//${window.location.hostname}:5000`;
@@ -45,10 +66,9 @@ const ProfilePanel = ({ isOpen, onClose, user, onUpdate }) => {
       const data = await response.json();
       if (data.success) {
         if (onUpdate) onUpdate(data.user);
-        alert('Profile updated successfully!');
-        onClose();
+        setIsEditing(false);
       } else {
-        alert(data.message);
+        alert(data.message || 'Failed to update profile');
       }
     } catch (error) {
       console.error(error);
@@ -60,23 +80,25 @@ const ProfilePanel = ({ isOpen, onClose, user, onUpdate }) => {
 
   if (!isOpen) return null;
 
+  const displayName = formData.name || 'User';
+
   return (
     <div className="profile-panel-overlay" onClick={onClose}>
       <div className="profile-panel" onClick={e => e.stopPropagation()}>
         <div className="profile-header">
-          <button className="profile-close-btn" onClick={onClose}>
-            <X size={18} />
+          <button className="profile-close-btn" onClick={onClose} title="Close">
+            <X size={14} />
           </button>
           <div className="profile-avatar-container">
             <div className="profile-avatar">
-              {formData.name.charAt(0).toUpperCase()}
+              {displayName.charAt(0).toUpperCase()}
             </div>
-            <div className="profile-avatar-upload">
-              <Camera size={14} />
+            <div className="profile-avatar-upload" title="Change photo">
+              <Camera size={10} />
             </div>
           </div>
-          <h2>{formData.name}</h2>
-          <p style={{ opacity: 0.8, fontSize: '0.9rem', marginTop: '0.2rem' }}>{formData.email}</p>
+          <h2>{displayName}</h2>
+          <p>{formData.email}</p>
         </div>
 
         <form className="profile-body" onSubmit={handleSubmit}>
@@ -84,36 +106,36 @@ const ProfilePanel = ({ isOpen, onClose, user, onUpdate }) => {
 
           <div className="profile-form-group">
             <label className="profile-label">Full Name</label>
-            <div className="profile-input-wrapper">
-              <div className="profile-icon"><User size={16}/></div>
+            <div className={`profile-input-wrapper ${!isEditing ? 'disabled' : ''}`}>
+              <div className="profile-icon"><User size={13}/></div>
               <input 
                 type="text" 
                 name="name"
                 className="profile-input" 
                 value={formData.name}
                 onChange={handleChange}
+                disabled={!isEditing}
               />
             </div>
           </div>
 
           <div className="profile-form-group">
             <label className="profile-label">Email Address (Read Only)</label>
-            <div className="profile-input-wrapper">
-              <div className="profile-icon"><Mail size={16}/></div>
+            <div className="profile-input-wrapper disabled">
+              <div className="profile-icon"><Mail size={13}/></div>
               <input 
                 type="email" 
                 className="profile-input" 
                 value={formData.email}
-                readOnly
-                style={{ opacity: 0.6 }}
+                disabled={true}
               />
             </div>
           </div>
 
           <div className="profile-form-group">
             <label className="profile-label">Mobile Number</label>
-            <div className="profile-input-wrapper">
-              <div className="profile-icon"><Phone size={16}/></div>
+            <div className={`profile-input-wrapper ${!isEditing ? 'disabled' : ''}`}>
+              <div className="profile-icon"><Phone size={13}/></div>
               <input 
                 type="text" 
                 name="mobileNumber"
@@ -121,32 +143,35 @@ const ProfilePanel = ({ isOpen, onClose, user, onUpdate }) => {
                 value={formData.mobileNumber}
                 onChange={handleChange}
                 placeholder="+1 234 567 8900"
+                disabled={!isEditing}
               />
             </div>
           </div>
 
           <div className="profile-form-group">
             <label className="profile-label">Date of Birth</label>
-            <div className="profile-input-wrapper">
-              <div className="profile-icon"><Calendar size={16}/></div>
+            <div className={`profile-input-wrapper ${!isEditing ? 'disabled' : ''}`}>
+              <div className="profile-icon"><Calendar size={13}/></div>
               <input 
                 type="date" 
                 name="dob"
                 className="profile-input" 
                 value={formData.dob}
                 onChange={handleChange}
+                disabled={!isEditing}
               />
             </div>
           </div>
 
           <div className="profile-form-group">
             <label className="profile-label">Gender</label>
-            <div className="profile-input-wrapper">
+            <div className={`profile-input-wrapper ${!isEditing ? 'disabled' : ''}`}>
               <select 
                 name="sex" 
                 className="profile-input" 
                 value={formData.sex}
                 onChange={handleChange}
+                disabled={!isEditing}
               >
                 <option value="">Select Gender</option>
                 <option value="Male">Male</option>
@@ -156,9 +181,35 @@ const ProfilePanel = ({ isOpen, onClose, user, onUpdate }) => {
             </div>
           </div>
 
-          <button type="submit" className="profile-save-btn" disabled={loading}>
-            {loading ? 'Saving...' : 'Save Changes'}
-          </button>
+          {/* Side-by-Side Action Buttons */}
+          <div className="profile-btn-row">
+            {!isEditing ? (
+              <button 
+                type="button" 
+                className="profile-btn profile-btn-edit" 
+                onClick={handleEditClick}
+              >
+                Edit Profile
+              </button>
+            ) : (
+              <button 
+                type="button" 
+                className="profile-btn profile-btn-cancel" 
+                onClick={handleCancel}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+            )}
+
+            <button 
+              type="submit" 
+              className={`profile-btn profile-btn-save ${!isEditing ? 'disabled' : ''}`} 
+              disabled={!isEditing || loading}
+            >
+              {loading ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
         </form>
       </div>
     </div>

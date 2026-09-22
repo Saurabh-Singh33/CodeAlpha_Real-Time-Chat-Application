@@ -94,24 +94,31 @@ export default function Chat({ roomId, chatEnabled = true }) {
               <div key={index} style={{ 
                 display: 'flex', 
                 flexDirection: 'column',
-                alignItems: isSelf ? 'flex-end' : 'flex-start'
+                alignItems: isSelf ? 'flex-end' : 'flex-start',
+                marginBottom: '0.15rem'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '3px', padding: '0 4px' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '2px' }}>
+                  <span style={{ fontSize: '0.7rem', fontWeight: '600', color: '#6B7280' }}>
                     {isSelf ? 'You' : msg.sender}
                   </span>
                   {msg.timestamp && (
-                    <span style={{ fontSize: '0.675rem', color: 'var(--text-muted)' }}>
-                      {formatTime(msg.timestamp)}
+                    <span style={{ fontSize: '0.675rem', color: '#9CA3AF' }}>
+                      • {formatTime(msg.timestamp)}
                     </span>
                   )}
                 </div>
 
-                <div className={`message ${isSelf ? 'self' : ''}`}>
+                <div 
+                  className={`message ${isSelf ? 'self' : ''}`}
+                  style={{
+                    textAlign: isSelf ? 'right' : 'left',
+                    color: '#1F2937'
+                  }}
+                >
                   {msg.type === 'text' ? (
                     msg.text
                   ) : isImage ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: isSelf ? 'flex-end' : 'flex-start', gap: '0.4rem' }}>
                       <img 
                         src={msg.fileData} 
                         alt={msg.fileName} 
@@ -119,30 +126,30 @@ export default function Chat({ roomId, chatEnabled = true }) {
                         style={{ 
                           maxWidth: '220px', 
                           maxHeight: '180px', 
-                          borderRadius: '10px', 
+                          borderRadius: '8px', 
                           objectFit: 'cover', 
                           cursor: 'pointer',
-                          border: '1px solid rgba(255,255,255,0.2)' 
+                          border: '1px solid #E5E7EB' 
                         }} 
                       />
                       <a 
                         href={msg.fileData} 
                         download={msg.fileName} 
-                        style={{ fontSize: '0.75rem', color: isSelf ? '#e0e7ff' : 'var(--accent-indigo)', textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
+                        style={{ fontSize: '0.75rem', color: '#2563EB', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
                       >
                         <Download size={12} /> {msg.fileName}
                       </a>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <Paperclip size={16} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#1F2937' }}>
+                      <Paperclip size={15} color="#6B7280" />
                       <div style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.85rem' }}>
                         {msg.fileName}
                       </div>
                       <a 
                         href={msg.fileData} 
                         download={msg.fileName} 
-                        style={{ color: isSelf ? '#fff' : 'var(--accent-indigo)', padding: '4px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)' }}
+                        style={{ color: '#2563EB', padding: '4px', borderRadius: '4px', display: 'flex' }}
                         title="Download File"
                       >
                         <Download size={14} />

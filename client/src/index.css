@@ -1029,30 +1029,32 @@ h1, h2, h3, h4, h5, h6 {
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 1.25rem;
+  padding: 1rem 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
+  gap: 0.85rem;
 }
 
 .message {
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius-md);
-  background: var(--rm-msg-bg);
-  font-size: 0.925rem;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 0.875rem;
   line-height: 1.45;
-  color: var(--rm-text-primary);
-  border: 1px solid var(--rm-border);
-  max-width: 85%;
+  color: #1F2937;
+  border: none;
+  box-shadow: none;
+  max-width: 100%;
   word-break: break-word;
 }
 
 .message.self {
-  background: var(--rm-msg-self);
-  color: white;
+  background: transparent;
+  color: #1F2937;
   align-self: flex-end;
+  text-align: right;
   border: none;
-  box-shadow: 0 4px 15px rgba(26, 115, 232, 0.25);
+  box-shadow: none;
 }
 
 .chat-input {
@@ -1135,12 +1137,12 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Profile Panel Styles */
+/* Profile Panel Styles - Minimal & Compact */
 .profile-panel-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(3px);
   z-index: 1000;
   display: flex;
   justify-content: flex-end;
@@ -1148,13 +1150,14 @@ h1, h2, h3, h4, h5, h6 {
 
 .profile-panel {
   width: 100%;
-  max-width: 340px;
+  max-width: 330px;
   background: #FFFFFF;
   height: 100vh;
-  box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+  max-height: 100vh;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
-  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   overflow-y: auto;
 }
 
@@ -1165,112 +1168,140 @@ h1, h2, h3, h4, h5, h6 {
 
 .profile-header {
   background: #FFFFFF;
-  padding: 3rem 1.5rem 1.5rem;
+  padding: 1.25rem 1.25rem 0.65rem;
   color: #1F2937;
   text-align: center;
   position: relative;
   border-bottom: 1px solid #F3F4F6;
 }
 
+.profile-header h2 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.profile-header p {
+  opacity: 0.75;
+  font-size: 0.8rem;
+  margin: 0.15rem 0 0 0;
+  color: #4B5563;
+}
+
 .profile-close-btn {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
+  top: 0.75rem;
+  right: 0.75rem;
   background: #F3F4F6;
   border: none;
   color: #4B5563;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background 0.2s;
+}
+
+.profile-close-btn:hover {
+  background: #E5E7EB;
+  color: #111827;
 }
 
 .profile-avatar-container {
   position: relative;
-  width: 100px;
-  height: 100px;
-  margin: 0 auto 1rem;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 0.4rem;
 }
 
 .profile-avatar {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: #F3F4F6;
-  color: #1A73E8;
-  font-size: 2.5rem;
-  font-weight: bold;
+  background: #EEF2FF;
+  color: #2563EB;
+  font-size: 1.4rem;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #1A73E8;
+  border: 1px solid #C7D2FE;
 }
 
 .profile-avatar-upload {
   position: absolute;
-  top: 0;
-  right: -5px;
-  background: white;
-  color: #333;
+  bottom: -2px;
+  right: -2px;
+  background: #FFFFFF;
+  color: #4B5563;
+  border: 1px solid #E5E7EB;
   border-radius: 50%;
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .profile-body {
-  padding: 1.5rem;
+  padding: 0.85rem 1.25rem 1rem;
   flex: 1;
   background: #FFFFFF;
+  display: flex;
+  flex-direction: column;
 }
 
 .profile-section-title {
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: #1F2937;
-  text-align: center;
-  margin-bottom: 1.5rem;
-  letter-spacing: 1px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.65rem;
 }
 
 .profile-form-group {
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.55rem;
 }
 
 .profile-label {
   display: block;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   color: #4B5563;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
 }
 
 .profile-input-wrapper {
   display: flex;
   align-items: center;
   border: 1px solid #E5E7EB;
-  border-radius: 8px;
-  padding: 0.5rem 1rem;
-  background: #F3F4F6;
+  border-radius: 6px;
+  padding: 0.35rem 0.65rem;
+  background: #FFFFFF;
+  transition: all 0.2s ease;
+  height: 34px;
+  box-sizing: border-box;
 }
 
-.profile-input-wrapper:focus-within {
-  border-color: #1A73E8;
-  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+.profile-input-wrapper.disabled {
+  background: #F9FAFB;
+  border-color: #F3F4F6;
+}
+
+.profile-input-wrapper:focus-within:not(.disabled) {
+  border-color: #2563EB;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
 }
 
 .profile-icon {
-  color: #60A5FA;
-  margin-right: 0.75rem;
-  width: 24px;
-  height: 24px;
-  background: transparent;
+  color: #9CA3AF;
+  margin-right: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1283,26 +1314,80 @@ h1, h2, h3, h4, h5, h6 {
   outline: none;
   color: #1F2937;
   font-family: inherit;
-  font-size: 0.95rem;
-}
-
-.profile-save-btn {
+  font-size: 0.85rem;
   width: 100%;
-  background: #1A73E8;
-  color: white;
-  border: none;
-  padding: 1rem;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  margin-top: 1rem;
-  transition: 0.2s;
 }
 
-.profile-save-btn:hover {
-  background: #174ea6;
-  transform: scale(1.02);
+.profile-input:disabled {
+  color: #6B7280;
+  cursor: default;
+}
+
+/* Profile Buttons - Side by Side & Compact */
+.profile-btn-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+
+.profile-btn {
+  flex: 1;
+  height: 34px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+}
+
+/* Edit / Light Tone Button */
+.profile-btn-edit {
+  background-color: #F3F4F6;
+  color: #374151;
+  border-color: #D1D5DB;
+}
+
+.profile-btn-edit:hover {
+  background-color: #E5E7EB;
+  color: #111827;
+}
+
+/* Cancel Button */
+.profile-btn-cancel {
+  background-color: #FFFFFF;
+  color: #4B5563;
+  border-color: #D1D5DB;
+}
+
+.profile-btn-cancel:hover {
+  background-color: #F3F4F6;
+  color: #111827;
+}
+
+/* Save Button */
+.profile-btn-save {
+  background-color: #2563EB;
+  color: #FFFFFF;
+  border-color: #2563EB;
+}
+
+.profile-btn-save:hover:not(:disabled) {
+  background-color: #1D4ED8;
+  border-color: #1D4ED8;
+}
+
+.profile-btn-save.disabled,
+.profile-btn-save:disabled {
+  background-color: #F3F4F6;
+  color: #9CA3AF !important;
+  border-color: #E5E7EB;
+  cursor: not-allowed;
+  opacity: 0.75;
 }
 
 /* Landing Page Styles */
@@ -1442,12 +1527,12 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Dedicated "Go to Dashboard" Button UI */
 .btn-dashboard-primary {
-  background-color: #2563eb;
-  color: #FFFFFF !important;
-  border: 1px solid #2563eb;
+  background-color: #EEF2FF;
+  color: #1E40AF !important;
+  border: 1px solid #C7D2FE;
   border-radius: 6px;
   padding: 0 1rem;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.875rem;
   cursor: pointer;
   text-decoration: none;
@@ -1458,11 +1543,14 @@ h1, h2, h3, h4, h5, h6 {
   height: 36px;
   box-sizing: border-box;
   box-shadow: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .btn-dashboard-primary:hover {
-  background-color: #2563eb;
-  box-shadow: none;
+  background-color: #E0E7FF;
+  border-color: #A5B4FC;
+  color: #1E3A8A !important;
+  box-shadow: 0 2px 8px rgba(30, 64, 175, 0.08);
   transform: none;
 }
 

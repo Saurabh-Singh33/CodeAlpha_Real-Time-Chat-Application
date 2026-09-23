@@ -1,9 +1,10 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Video, LogOut, Copy, Check, X, PlusCircle, Link as LinkIcon, Shield, Users, Bell, Calendar, ChevronDown, Edit2, Trash2, Plus, Home } from 'lucide-react';
+import { Video, LogOut, Copy, Check, X, PlusCircle, Link as LinkIcon, Shield, Users, Bell, Calendar, ChevronDown, Edit2, Trash2, Plus, Home, Bot, BrainCircuit } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import ProfilePanel from '../components/ProfilePanel';
+import AiSummaryPanel from '../components/AiSummaryPanel';
 
 export default function Dashboard() {
   const [roomIdInput, setRoomIdInput] = useState('');
@@ -17,6 +18,9 @@ export default function Dashboard() {
   const [showProfile, setShowProfile] = useState(false);
   
   const [meetings, setMeetings] = useState([]);
+  const [aiSummaries, setAiSummaries] = useState([]);
+  const [selectedAiMeetingId, setSelectedAiMeetingId] = useState(null);
+
   const [showMeetingModal, setShowMeetingModal] = useState(false);
   const [editingMeeting, setEditingMeeting] = useState(null);
   const [meetingForm, setMeetingForm] = useState({ title: '', date: '', time: '', team: '' });
@@ -34,6 +38,7 @@ export default function Dashboard() {
     setCurrentUser(user);
     if (user) {
       fetchMeetings();
+      fetchAiSummaries();
     }
   }, [user]);
 
@@ -54,6 +59,22 @@ export default function Dashboard() {
       }
     } catch (err) {
       console.error('Error fetching meetings:', err);
+    }
+  };
+
+  const fetchAiSummaries = async () => {
+    try {
+      const res = await fetch(`${getServerUrl()}/api/ai-meeting/list`, {
+        credentials: 'include'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setAiSummaries(data.summaries || []);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching AI summaries:', err);
     }
   };
 
@@ -664,6 +685,14 @@ export default function Dashboard() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* AI Summary Panel Modal Overlay */}
+      {selectedAiMeetingId && (
+        <AiSummaryPanel 
+          meetingId={selectedAiMeetingId} 
+          onClose={() => setSelectedAiMeetingId(null)}
+        />
       )}
     </div>
   );

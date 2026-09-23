@@ -5,9 +5,11 @@ import { AuthContext } from '../context/AuthContext';
 import VideoGrid from '../components/VideoGrid';
 import Chat from '../components/Chat';
 import Whiteboard from '../components/Whiteboard';
+import AiSummaryPanel from '../components/AiSummaryPanel';
 import { 
   Monitor, MonitorUp, Video, VideoOff, Mic, MicOff, MessageSquare, 
-  Smile, X, StopCircle, Users, UserPlus, Layout, Copy, Check, Disc, Clock, Moon, Sun, Lock, Unlock
+  Smile, X, StopCircle, Users, UserPlus, Layout, Copy, Check, Disc, Clock, Moon, Sun, Lock, Unlock,
+  Bot, Sparkles, BrainCircuit
 } from 'lucide-react';
 
 export default function Room() {
@@ -45,6 +47,13 @@ export default function Room() {
   const [sidePanelWidth, setSidePanelWidth] = useState(380);
   
   const [isHost, setIsHost] = useState(false);
+
+  // AI Meeting Assistant States
+  const [isAiActive, setIsAiActive] = useState(false);
+  const [showAiSummary, setShowAiSummary] = useState(false);
+  const [aiNotice, setAiNotice] = useState('');
+  const chunkNumberRef = useRef(1);
+  const aiAudioRecorderRef = useRef(null);
 
   // Call Duration Timer
   const [secondsElapsed, setSecondsElapsed] = useState(0);
@@ -119,6 +128,15 @@ export default function Room() {
       setChatEnabled(enabled);
     });
 
+    socket.on('ai-meeting-notes-toggled', ({ enabled }) => {
+      setIsAiActive(enabled);
+    });
+
+    socket.on('ai-error', ({ message }) => {
+      setAiNotice(message);
+      setTimeout(() => setAiNotice(''), 4000);
+    });
+
     socket.on('switch-tab', (tab) => {
       setActiveTab(tab);
     });
@@ -147,8 +165,78 @@ export default function Room() {
       socket.off('user-disconnected');
       socket.off('chat-toggled');
       socket.off('switch-tab');
+      socket.off('ai-meeting-notes-toggled');
+      socket.off('ai-error');
     };
   }, [roomId, socket, user, isValidating, roomError]);
+
+  // Audio chunk recording effect when Host enables AI Meeting Notes
+  useEffect(() => {
+    if (!isAiActive || !stream) {
+      if (aiAudioRecorderRef.current && aiAudioRecorderRef.current.state !== 'inactive') {
+        aiAudioRecorderRef.current.stop();
+      }
+      return;
+    }
+
+    try {
+      const audioTracks = stream.getAudioTracks();
+      if (!audioTracks || audioTracks.length === 0) return;
+
+      const audioStream = new MediaStream(audioTracks);
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : 'audio/webm';
+
+      const recorder = new MediaRecorder(audioStream, { mimeType });
+      aiAudioRecorderRef.current = recorder;
+
+      recorder.ondataavailable = async (e) => {
+        if (e.data && e.data.size > 0) {
+          const currentChunkNum = chunkNumberRef.current;
+          chunkNumberRef.current += 1;
+
+          const formData = new FormData();
+          formData.append('meetingId', roomId);
+          formData.append('chunkNumber', currentChunkNum);
+          formData.append('startTime', (currentChunkNum - 1) * 300);
+          formData.append('endTime', currentChunkNum * 300);
+          formData.append('audioChunk', e.data, `chunk_${currentChunkNum}.webm`);
+
+          try {
+            await fetch(`${getServerUrl()}/api/ai-meeting/chunk`, {
+              method: 'POST',
+              body: formData,
+              credentials: 'include'
+            });
+          } catch (err) {
+            console.error('Failed to upload transcript chunk:', err);
+          }
+        }
+      };
+
+      // Upload audio chunk every 5 minutes (300,000 ms)
+      recorder.start(300000);
+    } catch (err) {
+      console.warn('AI Audio recorder error:', err);
+    }
+
+    return () => {
+      if (aiAudioRecorderRef.current && aiAudioRecorderRef.current.state !== 'inactive') {
+        aiAudioRecorderRef.current.stop();
+      }
+    };
+  }, [isAiActive, stream, roomId]);
+
+  const handleToggleAiMeetingNotes = () => {
+    if (!isHost) {
+      setAiNotice('Only the meeting Host can enable or disable AI Meeting Notes.');
+      setTimeout(() => setAiNotice(''), 3000);
+      return;
+    }
+    const nextState = !isAiActive;
+    socket.emit('toggle-ai-meeting-notes', { roomId, enabled: nextState });
+  };
 
   const handleTabSwitch = (tab) => {
     setActiveTab(tab);
@@ -395,6 +483,26 @@ export default function Room() {
               <span style={{ color: 'var(--rm-text-muted)' }}>Room:</span> 
               <span>{roomId.length > 12 ? `${roomId.substring(0, 12)}...` : roomId}</span>
             </div>
+
+            {/* Persistent AI Notification Banner for ALL Participants */}
+            {isAiActive && (
+              <div style={{
+                background: 'linear-gradient(90deg, #4f46e5, #9333ea)',
+                color: '#ffffff',
+                padding: '6px 14px',
+                borderRadius: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '0.82rem',
+                fontWeight: '600',
+                boxShadow: '0 0 15px rgba(147, 51, 234, 0.4)',
+                border: '1px solid rgba(255, 255, 255, 0.25)'
+              }}>
+                <Bot size={16} />
+                <span>🤖 AI Meeting Notes Active — This meeting is being transcribed.</span>
+              </div>
+            )}
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <button 
@@ -422,6 +530,27 @@ export default function Room() {
               </div>
             </div>
           </div>
+
+          {/* AI Notice Alert Toast */}
+          {aiNotice && (
+            <div style={{
+              position: 'fixed',
+              top: '65px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'rgba(239, 68, 68, 0.95)',
+              color: '#fff',
+              padding: '8px 20px',
+              borderRadius: '8px',
+              zIndex: 9999,
+              fontSize: '0.85rem',
+              fontWeight: '600',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+              border: '1px solid rgba(255, 255, 255, 0.2)'
+            }}>
+              {aiNotice}
+            </div>
+          )}
 
           {/* Center Stage: Video Grid vs Whiteboard */}
           {activeTab === 'video' ? (
@@ -490,6 +619,31 @@ export default function Room() {
             
             {/* Right Tools Section */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, justifyContent: 'flex-end' }}>
+              {/* Host-Only AI Meeting Notes Toggle */}
+              <button 
+                className={`feature-btn ${isAiActive ? 'active' : ''}`}
+                onClick={handleToggleAiMeetingNotes}
+                title={isHost ? (isAiActive ? 'Disable AI Meeting Notes' : 'Enable AI Meeting Notes') : 'Only Host can toggle AI Meeting Notes'}
+                style={{
+                  background: isAiActive ? 'linear-gradient(135deg, #6366f1, #a855f7)' : undefined,
+                  color: isAiActive ? '#fff' : undefined,
+                  opacity: isHost ? 1 : 0.65,
+                  cursor: isHost ? 'pointer' : 'not-allowed'
+                }}
+              >
+                <Bot size={16} />
+                <span className="hide-on-mobile">{isAiActive ? '🤖 AI Notes ON' : '🤖 AI Notes'}</span>
+              </button>
+
+              {/* View AI Summary Button (If active or processed) */}
+              <button 
+                className="feature-btn" 
+                onClick={() => setShowAiSummary(true)} 
+                title="View AI Meeting Summary"
+              >
+                <BrainCircuit size={16} />
+                <span className="hide-on-mobile">AI Summary</span>
+              </button>
               {isHost && (
                 <button className="feature-btn" onClick={() => handleTabSwitch(activeTab === 'video' ? 'whiteboard' : 'video')}>
                   <Layout size={16} />
@@ -624,6 +778,14 @@ export default function Room() {
             </form>
           </div>
         </div>
+      )}
+      {/* AI Summary Panel Overlay */}
+      {showAiSummary && (
+        <AiSummaryPanel 
+          meetingId={roomId} 
+          onClose={() => setShowAiSummary(false)}
+          onBackToRoom={() => setShowAiSummary(false)}
+        />
       )}
     </div>
   );

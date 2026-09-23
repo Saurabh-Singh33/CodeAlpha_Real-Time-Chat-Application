@@ -6,6 +6,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/auth');
 const meetingRoutes = require('./routes/meetings');
+const aiMeetingRoutes = require('./routes/aiMeeting');
 const Room = require('./models/Room');
 const Message = require('./models/Message');
 const connectDB = require('./config/db');
@@ -26,6 +27,7 @@ app.use(cookieParser());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/meetings', meetingRoutes);
+app.use('/api/ai-meeting', aiMeetingRoutes);
 
 // API to fetch room messages from MongoDB
 app.get('/api/messages/:roomId', async (req, res) => {
@@ -118,6 +120,8 @@ const io = new Server(server, {
 
 // Map of rooms and their participants
 const rooms = {};
+// Map of room AI assistant state
+const aiMeetingStates = {};
 
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
@@ -148,6 +152,9 @@ io.on('connection', (socket) => {
 
     socket.emit('room-joined', { isHost });
 
+    // Send initial AI Meeting Notes status to newly joined user
+    socket.emit('ai-meeting-notes-toggled', { enabled: !!aiMeetingStates[roomId] });
+
     // Let everyone else in the room know someone joined
     socket.to(roomId).emit('user-connected', { userId: socket.id, username });
 
@@ -156,6 +163,23 @@ io.on('connection', (socket) => {
     socket.emit('room-users', otherUsers);
 
     console.log(`${username} (${socket.id}) joined room ${roomId}`);
+  });
+
+  // Host-Only AI Meeting Assistant Toggle
+  socket.on('toggle-ai-meeting-notes', ({ roomId, enabled }) => {
+    const targetRoomId = roomId || socket.roomId;
+    const roomUsers = rooms[targetRoomId];
+    const currentUser = roomUsers && roomUsers[socket.id];
+
+    if (!currentUser || !currentUser.isHost) {
+      return socket.emit('ai-error', { message: 'Only the meeting Host can enable or disable AI Meeting Notes.' });
+    }
+
+    aiMeetingStates[targetRoomId] = !!enabled;
+    io.to(targetRoomId).emit('ai-meeting-notes-toggled', { 
+      enabled: !!enabled, 
+      enabledBy: socket.username 
+    });
   });
 
   // WebRTC Signaling
@@ -305,6 +329,7 @@ io.on('connection', (socket) => {
       // Clean up empty rooms
       if (Object.keys(rooms[roomId]).length === 0) {
         delete rooms[roomId];
+        delete aiMeetingStates[roomId];
       }
     }
   });

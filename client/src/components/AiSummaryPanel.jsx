@@ -186,13 +186,14 @@ export default function AiSummaryPanel({ meetingId, onClose, onBackToRoom }) {
               width: '38px',
               height: '38px',
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              background: '#EEF2FF',
+              border: '1px solid #E0E7FF',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)'
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
             }}>
-              <Bot size={22} color="#fff" />
+              <Bot size={22} color="#4F46E5" />
             </div>
             <div>
               <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -201,9 +202,10 @@ export default function AiSummaryPanel({ meetingId, onClose, onBackToRoom }) {
                   fontSize: '0.75rem',
                   padding: '2px 8px',
                   borderRadius: '12px',
-                  background: 'rgba(99, 102, 241, 0.2)',
-                  color: '#818cf8',
-                  border: '1px solid rgba(129, 140, 248, 0.3)'
+                  background: '#EEF2FF',
+                  color: '#4F46E5',
+                  border: '1px solid #C7D2FE',
+                  fontWeight: 600
                 }}>
                   Gemini Powered
                 </span>

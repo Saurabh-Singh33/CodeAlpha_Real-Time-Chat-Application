@@ -366,6 +366,11 @@ export default function Room() {
   };
   
   const leaveRoom = () => {
+    if (aiAudioRecorderRef.current && aiAudioRecorderRef.current.state !== 'inactive') {
+      try {
+        aiAudioRecorderRef.current.stop();
+      } catch (_e) {}
+    }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
@@ -497,10 +502,10 @@ export default function Room() {
                 fontSize: '0.82rem',
                 fontWeight: '600',
                 border: '1px solid #E0E7FF',
-                boxShadow: '0 2px 6px rgba(0, 0, 0, 0.05)'
+                boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)'
               }}>
-                <Bot size={16} color="#6366f1" />
-                <span>🤖 AI Meeting Notes Active — This meeting is being transcribed.</span>
+                <Bot size={16} color="#4F46E5" />
+                <span>AI Meeting Notes Active — Transcribing meeting</span>
               </div>
             )}
             
@@ -633,7 +638,7 @@ export default function Room() {
                 }}
               >
                 <Bot size={16} color={isAiActive ? "#4F46E5" : "#6B7280"} />
-                <span className="hide-on-mobile">{isAiActive ? '🤖 AI Notes ON' : '🤖 AI Notes'}</span>
+                <span className="hide-on-mobile">{isAiActive ? 'AI Notes ON' : 'AI Notes'}</span>
               </button>
 
               {/* View AI Summary Button (If active or processed) */}

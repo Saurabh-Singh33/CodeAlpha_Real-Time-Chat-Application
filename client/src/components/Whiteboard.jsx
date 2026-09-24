@@ -114,17 +114,17 @@ export default function Whiteboard({ roomId, isHost }) {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    padding: '6px 10px',
+    padding: '8px 12px',
     borderRadius: '6px',
     border: 'none',
     background: isSelected ? '#EEF2FF' : 'transparent',
-    color: isSelected ? '#2563EB' : '#374151',
-    fontWeight: isSelected ? '600' : '400',
+    color: isSelected ? '#4F46E5' : '#374151',
+    fontWeight: isSelected ? '600' : '500',
     fontSize: '0.85rem',
     cursor: 'pointer',
     textAlign: 'left',
     width: '100%',
-    transition: 'background 0.15s ease'
+    transition: 'all 0.15s ease'
   });
 
   // --- INIT LOCAL STORAGE ---
@@ -714,8 +714,8 @@ export default function Whiteboard({ roomId, isHost }) {
                 <div style={{ 
                   position: 'absolute', top: '100%', left: 0, marginTop: '6px',
                   background: '#FFFFFF', border: '1px solid #E5E7EB', 
-                  borderRadius: '8px', padding: '6px', display: 'flex', flexDirection: 'column', gap: '4px', zIndex: 100,
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.12)', minWidth: '130px'
+                  borderRadius: '8px', padding: '6px', display: 'flex', flexDirection: 'column', gap: '4px', zIndex: 1000,
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.12)', minWidth: '150px'
                 }}>
                   <button 
                     onClick={() => { setTool('rect'); setShowShapes(false); }} 

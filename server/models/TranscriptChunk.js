@@ -26,7 +26,7 @@ const transcriptChunkSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
-    expires: 432000 // 5 days TTL index in MongoDB Atlas (432,000 seconds)
+    expires: 259200 // 3 days TTL index in MongoDB Atlas (259,200 seconds)
   }
 });
 

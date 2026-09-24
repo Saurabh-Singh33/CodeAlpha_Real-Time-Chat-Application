@@ -69,6 +69,8 @@ const uploadChunk = async (req, res) => {
   }
 };
 
+const aiJobQueue = require('../services/aiJobQueue');
+
 /**
  * Trigger Post-Meeting Processing to generate AI Summary
  * POST /api/ai-meeting/process/:meetingId
@@ -82,70 +84,29 @@ const processMeetingSummary = async (req, res) => {
   }
 
   try {
-    // Check if an analysis document already exists or create pending state
-    let analysis = await MeetingAIAnalysis.findOne({ meetingId });
-    if (!analysis) {
-      analysis = await MeetingAIAnalysis.create({
-        meetingId,
-        status: 'transcribing',
-        duration: duration || 0,
-        participantCount: participantCount || 1
+    // 1. Check MongoDB Atlas Cache first. If completed, return instantly!
+    const existingAnalysis = await MeetingAIAnalysis.findOne({ meetingId });
+    if (existingAnalysis && existingAnalysis.status === 'completed') {
+      return res.json({
+        success: true,
+        message: 'Summary fetched from MongoDB Atlas cache.',
+        analysis: existingAnalysis,
+        cached: true
       });
-    } else {
-      analysis.status = 'analyzing';
-      analysis.errorMessage = '';
-      if (duration) analysis.duration = duration;
-      if (participantCount) analysis.participantCount = participantCount;
-      await analysis.save();
     }
 
-    // Fetch all transcript chunks stored for this meeting sorted by chunkNumber
-    const chunks = await TranscriptChunk.find({ meetingId }).sort({ chunkNumber: 1 });
-    analysis.transcriptChunkCount = chunks.length;
-
-    if (chunks.length === 0) {
-      analysis.status = 'completed';
-      analysis.finalSummary = 'No transcripts were recorded for this meeting.';
-      await analysis.save();
-      return res.json({ success: true, analysis });
-    }
-
-    // Process section grouping & Gemini AI synthesis
-    analysis.status = 'analyzing';
-    await analysis.save();
-
-    const aiResult = await aiMeetingService.generateAnalysis(chunks);
-
-    // Save final analysis to MongoDB Atlas
-    analysis.finalSummary = aiResult.summary;
-    analysis.keyPoints = aiResult.keyPoints;
-    analysis.decisions = aiResult.decisions;
-    analysis.actionItems = aiResult.actionItems;
-    analysis.sectionSummaries = aiResult.sectionSummaries;
-    analysis.status = 'completed';
-    analysis.errorMessage = '';
-    await analysis.save();
-
-    res.json({
-      success: true,
-      message: 'AI Meeting analysis generated successfully',
-      analysis
+    // 2. Delegate to AIJobQueue for sequential, rate-limited processing
+    const queueResult = await aiJobQueue.addJob({
+      meetingId,
+      duration: duration || 0,
+      participantCount: participantCount || 1
     });
+
+    res.json(queueResult);
   } catch (error) {
     console.error('[AI Controller] Error processing meeting summary:', error);
-    
-    // Store error state in MongoDB Atlas so user can retry
-    const isQuotaError = error.statusCode === 429 || error.message.includes('quota') || error.message.includes('429');
-    const userErrMsg = isQuotaError ? 'AI quota reached. Please try again later.' : error.message;
-
-    await MeetingAIAnalysis.findOneAndUpdate(
-      { meetingId },
-      { 
-        status: 'failed', 
-        errorMessage: userErrMsg 
-      },
-      { upsert: true }
-    );
+    const isQuotaError = error.statusCode === 429 || error.message?.includes('quota') || error.message?.includes('429');
+    const userErrMsg = isQuotaError ? 'AI is busy processing other meetings. Your summary will be ready shortly.' : error.message;
 
     res.status(error.statusCode || 500).json({
       success: false,
@@ -170,10 +131,12 @@ const getMeetingSummary = async (req, res) => {
     const analysis = await MeetingAIAnalysis.findOne({ meetingId });
     const chunks = await TranscriptChunk.find({ meetingId }).sort({ chunkNumber: 1 });
 
+    // Handle Expired Data (older than 3 days / deleted by MongoDB Atlas TTL)
     if (!analysis && chunks.length === 0) {
-      return res.status(404).json({
+      return res.json({
         success: false,
-        message: 'No AI meeting notes or transcripts found for this meeting ID.'
+        expired: true,
+        message: 'Summary for this meeting has expired.'
       });
     }
 

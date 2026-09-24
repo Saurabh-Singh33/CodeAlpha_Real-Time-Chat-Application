@@ -1,12 +1,76 @@
+const { Queue, Worker } = require('bullmq');
+const Redis = require('ioredis');
 const MeetingAIAnalysis = require('../models/MeetingAIAnalysis');
 const TranscriptChunk = require('../models/TranscriptChunk');
 const aiMeetingService = require('./aiMeetingService');
 
 class AIJobQueue {
   constructor() {
+    this.useRedis = false;
+    this.bullQueue = null;
+    this.bullWorker = null;
+
+    // In-memory fallback queue for local environments without Redis running
     this.queue = [];
     this.isProcessing = false;
     this.activeMeetingId = null;
+
+    this.initBullMQ();
+  }
+
+  initBullMQ() {
+    const redisHost = process.env.REDIS_HOST || '127.0.0.1';
+    const redisPort = parseInt(process.env.REDIS_PORT || '6379', 10);
+    const redisUrl = process.env.REDIS_URL;
+
+    try {
+      const opts = redisUrl
+        ? { url: redisUrl, lazyConnect: true, maxRetriesPerRequest: null, retryStrategy: () => null }
+        : { host: redisHost, port: redisPort, lazyConnect: true, maxRetriesPerRequest: null, retryStrategy: () => null };
+
+      const connection = new Redis(opts);
+
+      // Disable uncaught error handler spam
+      connection.on('error', () => {
+        this.useRedis = false;
+      });
+
+      connection.connect()
+        .then(() => {
+          console.log('[AI Job Queue] Connected to Redis. BullMQ active for job processing.');
+          this.useRedis = true;
+
+          const workerOpts = redisUrl ? { connection: new Redis(redisUrl, { maxRetriesPerRequest: null }) } : { connection: new Redis({ host: redisHost, port: redisPort, maxRetriesPerRequest: null }) };
+
+          this.bullQueue = new Queue('ai-summary-queue', { connection });
+          this.bullWorker = new Worker(
+            'ai-summary-queue',
+            async (job) => {
+              await this.executeJob(job.data);
+            },
+            {
+              ...workerOpts,
+              concurrency: 1, // Process AI jobs one at a time to prevent quota exhaustion
+              limiter: {
+                max: 5,
+                duration: 60000 // Max 5 jobs per minute
+              }
+            }
+          );
+
+          this.bullWorker.on('failed', (job, err) => {
+            console.error(`[BullMQ Worker] Job ${job?.id} failed:`, err.message);
+          });
+        })
+        .catch(() => {
+          this.useRedis = false;
+          try {
+            connection.disconnect();
+          } catch (_e) {}
+        });
+    } catch (_err) {
+      this.useRedis = false;
+    }
   }
 
   /**
@@ -16,23 +80,13 @@ class AIJobQueue {
   async addJob(jobData) {
     const { meetingId, duration = 0, participantCount = 1 } = jobData;
 
-    // 1. Check if analysis is already completed in MongoDB Atlas
+    // 1. Check if analysis is already completed in MongoDB Atlas cache
     let analysis = await MeetingAIAnalysis.findOne({ meetingId });
     if (analysis && analysis.status === 'completed') {
       return { success: true, analysis, cached: true };
     }
 
-    // 2. Prevent duplicate queuing
-    const isAlreadyQueued = this.queue.some(job => job.meetingId === meetingId);
-    if (isAlreadyQueued || this.activeMeetingId === meetingId) {
-      return { 
-        success: true, 
-        message: 'AI summary job is already queued or processing.', 
-        analysis 
-      };
-    }
-
-    // 3. Create or update analysis status to pending/transcribing
+    // 2. Create or update analysis status to transcribing
     if (!analysis) {
       analysis = await MeetingAIAnalysis.create({
         meetingId,
@@ -48,63 +102,66 @@ class AIJobQueue {
       await analysis.save();
     }
 
-    // 4. Push to queue and trigger processing loop
-    this.queue.push({ meetingId, duration, participantCount, retryCount: 0 });
-    this.processNext();
+    // 3. Queue job via BullMQ if Redis connected
+    if (this.useRedis && this.bullQueue) {
+      try {
+        await this.bullQueue.add('process-summary', { meetingId, duration, participantCount }, {
+          jobId: `meeting_${meetingId}`,
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 5000
+          }
+        });
+        return { success: true, message: 'Summary job enqueued via BullMQ + Redis queue.', analysis };
+      } catch (err) {
+        console.warn('[AI Job Queue] BullMQ enqueue failed, falling back to in-memory queue:', err.message);
+      }
+    }
 
-    return { 
-      success: true, 
-      message: 'Summary request added to job queue.', 
-      analysis 
-    };
+    // Fallback: In-memory rate-limited queue
+    const isAlreadyQueued = this.queue.some(job => job.meetingId === meetingId);
+    if (!isAlreadyQueued && this.activeMeetingId !== meetingId) {
+      this.queue.push({ meetingId, duration, participantCount, retryCount: 0 });
+      this.processNextInMemory();
+    }
+
+    return { success: true, message: 'Summary request added to job queue.', analysis };
   }
 
   /**
-   * Process the next job in the queue sequentially
+   * Core worker logic: fetches chunks, calls Gemini API, updates MongoDB Atlas
    */
-  async processNext() {
-    if (this.isProcessing || this.queue.length === 0) {
+  async executeJob(jobData) {
+    const { meetingId } = jobData;
+    console.log(`[AI Job Queue] Starting AI processing for meeting: ${meetingId}`);
+
+    const analysis = await MeetingAIAnalysis.findOne({ meetingId });
+    if (!analysis) return;
+
+    analysis.status = 'transcribing';
+    await analysis.save();
+
+    // Fetch transcript chunks for this meeting
+    const chunks = await TranscriptChunk.find({ meetingId }).sort({ chunkNumber: 1 });
+    analysis.transcriptChunkCount = chunks.length;
+
+    if (chunks.length === 0) {
+      analysis.status = 'completed';
+      analysis.finalSummary = 'No transcripts were recorded for this meeting.';
+      await analysis.save();
+      console.log(`[AI Job Queue] No transcripts found for ${meetingId}. Marked as completed.`);
       return;
     }
 
-    this.isProcessing = true;
-    const currentJob = this.queue.shift();
-    const { meetingId } = currentJob;
-    this.activeMeetingId = meetingId;
-
-    console.log(`[AI Job Queue] Starting AI processing for meeting: ${meetingId} (Queue size: ${this.queue.length})`);
+    // Update state to analyzing before calling Gemini
+    analysis.status = 'analyzing';
+    await analysis.save();
 
     try {
-      const analysis = await MeetingAIAnalysis.findOne({ meetingId });
-      if (!analysis) {
-        this.finishCurrentJob();
-        return;
-      }
-
-      analysis.status = 'transcribing';
-      await analysis.save();
-
-      // Fetch transcript chunks for this meeting
-      const chunks = await TranscriptChunk.find({ meetingId }).sort({ chunkNumber: 1 });
-      analysis.transcriptChunkCount = chunks.length;
-
-      if (chunks.length === 0) {
-        analysis.status = 'completed';
-        analysis.finalSummary = 'No transcripts were recorded for this meeting.';
-        await analysis.save();
-        console.log(`[AI Job Queue] No transcripts found for ${meetingId}. Marked as completed.`);
-        this.finishCurrentJob();
-        return;
-      }
-
-      // Update state to analyzing before Gemini API call
-      analysis.status = 'analyzing';
-      await analysis.save();
-
-      // Call Gemini AI service
       const aiResult = await aiMeetingService.generateAnalysis(chunks);
 
-      // Save output to MongoDB Atlas
+      // Save output permanently in MongoDB Atlas
       analysis.finalSummary = aiResult.summary;
       analysis.keyPoints = aiResult.keyPoints;
       analysis.decisions = aiResult.decisions;
@@ -114,9 +171,9 @@ class AIJobQueue {
       analysis.errorMessage = '';
       await analysis.save();
 
-      console.log(`[AI Job Queue] Successfully generated AI summary for meeting: ${meetingId}`);
+      console.log(`[AI Job Queue] Successfully generated and cached AI summary for meeting: ${meetingId}`);
     } catch (error) {
-      console.error(`[AI Job Queue] Error processing meeting ${meetingId}:`, error);
+      console.error(`[AI Job Queue] Error processing meeting ${meetingId}:`, error.message);
 
       const isQuotaError = error.statusCode === 429 || 
                            error.message?.includes('quota') || 
@@ -127,39 +184,51 @@ class AIJobQueue {
         ? 'AI is busy processing other meetings. Your summary will be ready shortly.'
         : (error.message || 'Failed to generate AI summary.');
 
-      if (isQuotaError && currentJob.retryCount < 3) {
-        // Retry quota errors with exponential backoff
-        currentJob.retryCount += 1;
-        console.log(`[AI Job Queue] 429 Rate limit encountered for ${meetingId}. Re-queuing retry #${currentJob.retryCount} in 5s...`);
-        
-        await MeetingAIAnalysis.findOneAndUpdate(
-          { meetingId },
-          { status: 'analyzing', errorMessage: userErrMsg }
-        );
+      await MeetingAIAnalysis.findOneAndUpdate(
+        { meetingId },
+        { status: 'failed', errorMessage: userErrMsg }
+      );
 
-        setTimeout(() => {
-          this.queue.push(currentJob);
-        }, 5000);
-      } else {
-        await MeetingAIAnalysis.findOneAndUpdate(
-          { meetingId },
-          { status: 'failed', errorMessage: userErrMsg }
-        );
-      }
-    } finally {
-      this.finishCurrentJob();
+      throw error;
     }
   }
 
-  finishCurrentJob() {
-    this.activeMeetingId = null;
-    this.isProcessing = false;
-    // Process next job if present
-    setImmediate(() => this.processNext());
+  /**
+   * Process in-memory queue fallback sequentially
+   */
+  async processNextInMemory() {
+    if (this.isProcessing || this.queue.length === 0) return;
+
+    this.isProcessing = true;
+    const currentJob = this.queue.shift();
+    this.activeMeetingId = currentJob.meetingId;
+
+    try {
+      await this.executeJob(currentJob);
+    } catch (error) {
+      const isQuotaError = error.statusCode === 429 || 
+                           error.message?.includes('quota') || 
+                           error.message?.includes('429');
+
+      if (isQuotaError && currentJob.retryCount < 3) {
+        currentJob.retryCount += 1;
+        console.log(`[AI Job Queue Fallback] 429 Rate limit encountered for ${currentJob.meetingId}. Retrying #${currentJob.retryCount} in 5s...`);
+        setTimeout(() => {
+          this.queue.push(currentJob);
+          this.isProcessing = false;
+          this.processNextInMemory();
+        }, 5000);
+        return;
+      }
+    } finally {
+      this.activeMeetingId = null;
+      this.isProcessing = false;
+      setImmediate(() => this.processNextInMemory());
+    }
   }
 
   /**
-   * Get current queue status for a meeting
+   * Get job status for meeting
    */
   getJobStatus(meetingId) {
     if (this.activeMeetingId === meetingId) return 'processing';
@@ -169,5 +238,4 @@ class AIJobQueue {
   }
 }
 
-// Singleton instance
 module.exports = new AIJobQueue();

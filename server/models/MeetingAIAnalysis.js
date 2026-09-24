@@ -69,7 +69,7 @@ const meetingAIAnalysisSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
-    expires: 259200 // 3 days TTL index in MongoDB Atlas (259,200 seconds)
+    expires: parseInt(process.env.AI_TTL_SECONDS || '259200', 10) // 3 days TTL index in MongoDB Atlas (259,200 seconds)
   }
 });
 

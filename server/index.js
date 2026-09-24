@@ -124,7 +124,6 @@ const rooms = {};
 const aiMeetingStates = {};
 
 io.on('connection', (socket) => {
-  console.log(`User connected: ${socket.id}`);
 
   socket.on('join-room', async (roomId, username, userEmail) => {
     socket.join(roomId);
@@ -320,8 +319,10 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log(`User disconnected: ${socket.id}`);
     const roomId = socket.roomId;
+    if (socket.username && roomId) {
+      console.log(`${socket.username} left room ${roomId}`);
+    }
     if (roomId && rooms[roomId] && rooms[roomId][socket.id]) {
       delete rooms[roomId][socket.id];
       socket.to(roomId).emit('user-disconnected', socket.id);

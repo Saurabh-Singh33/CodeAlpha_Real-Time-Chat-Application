@@ -27,6 +27,12 @@ export default function AiSummaryPanel({ meetingId, onClose, onBackToRoom }) {
       });
       const data = await res.json();
 
+      if (data.expired || data.message?.includes('expired')) {
+        setError('Summary for this meeting has expired.');
+        setLoading(false);
+        return;
+      }
+
       if (res.ok && data.success) {
         setAnalysis(data.analysis);
         setChunks(data.chunks || []);
@@ -36,11 +42,12 @@ export default function AiSummaryPanel({ meetingId, onClose, onBackToRoom }) {
         } else if (data.analysis.status === 'failed') {
           setError(data.analysis.errorMessage || 'Failed to generate AI summary.');
         } else {
-          // Still processing
+          // Still processing/analyzing
+          setStatusMessage(data.analysis.status === 'transcribing' ? 'Transcribing...' : 'Analyzing...');
           pollStatus();
         }
       } else {
-        // If summary doesn't exist yet, trigger process endpoint
+        // If summary doesn't exist yet, trigger process endpoint on-demand
         triggerProcessing();
       }
     } catch (err) {
@@ -58,13 +65,13 @@ export default function AiSummaryPanel({ meetingId, onClose, onBackToRoom }) {
     // Progressive Loading Steps
     const steps = [
       'Preparing transcript...',
-      'Transcribing audio chunks...',
-      'Grouping section context...',
-      'Analyzing key discussion points with Gemini AI...',
-      'Generating final meeting summary & action items...'
+      'Transcribing...',
+      'Analyzing...',
+      'Generating summary...'
     ];
 
     let stepIdx = 0;
+    setStatusMessage(steps[0]);
     const interval = setInterval(() => {
       stepIdx = (stepIdx + 1) % steps.length;
       setStatusMessage(steps[stepIdx]);
@@ -82,7 +89,11 @@ export default function AiSummaryPanel({ meetingId, onClose, onBackToRoom }) {
 
       if (res.ok && data.success) {
         setAnalysis(data.analysis);
-        setStatusMessage('Completed');
+        if (data.analysis?.status === 'completed') {
+          setStatusMessage('Completed');
+        } else {
+          pollStatus();
+        }
       } else {
         setError(data.message || 'AI processing encountered an issue.');
       }
@@ -109,11 +120,13 @@ export default function AiSummaryPanel({ meetingId, onClose, onBackToRoom }) {
           } else if (data.analysis.status === 'failed') {
             setError(data.analysis.errorMessage || 'AI analysis failed');
             clearInterval(poller);
+          } else {
+            setStatusMessage(data.analysis.status === 'transcribing' ? 'Transcribing...' : 'Analyzing...');
           }
         }
       } catch (_e) {}
 
-      if (attempts > 15) clearInterval(poller);
+      if (attempts > 30) clearInterval(poller);
     }, 3000);
   };
 

@@ -487,8 +487,8 @@ export default function Room() {
             {/* Persistent AI Notification Banner for ALL Participants */}
             {isAiActive && (
               <div style={{
-                background: 'linear-gradient(90deg, #4f46e5, #9333ea)',
-                color: '#ffffff',
+                background: '#EEF2FF',
+                color: '#374151',
                 padding: '6px 14px',
                 borderRadius: '20px',
                 display: 'flex',
@@ -496,10 +496,10 @@ export default function Room() {
                 gap: '8px',
                 fontSize: '0.82rem',
                 fontWeight: '600',
-                boxShadow: '0 0 15px rgba(147, 51, 234, 0.4)',
-                border: '1px solid rgba(255, 255, 255, 0.25)'
+                border: '1px solid #E0E7FF',
+                boxShadow: '0 2px 6px rgba(0, 0, 0, 0.05)'
               }}>
-                <Bot size={16} />
+                <Bot size={16} color="#6366f1" />
                 <span>🤖 AI Meeting Notes Active — This meeting is being transcribed.</span>
               </div>
             )}
@@ -625,13 +625,14 @@ export default function Room() {
                 onClick={handleToggleAiMeetingNotes}
                 title={isHost ? (isAiActive ? 'Disable AI Meeting Notes' : 'Enable AI Meeting Notes') : 'Only Host can toggle AI Meeting Notes'}
                 style={{
-                  background: isAiActive ? 'linear-gradient(135deg, #6366f1, #a855f7)' : undefined,
-                  color: isAiActive ? '#fff' : undefined,
+                  background: isAiActive ? '#EEF2FF' : '#F3F4F6',
+                  color: isAiActive ? '#4F46E5' : '#374151',
+                  border: isAiActive ? '1px solid #C7D2FE' : '1px solid #E5E7EB',
                   opacity: isHost ? 1 : 0.65,
                   cursor: isHost ? 'pointer' : 'not-allowed'
                 }}
               >
-                <Bot size={16} />
+                <Bot size={16} color={isAiActive ? "#4F46E5" : "#6B7280"} />
                 <span className="hide-on-mobile">{isAiActive ? '🤖 AI Notes ON' : '🤖 AI Notes'}</span>
               </button>
 

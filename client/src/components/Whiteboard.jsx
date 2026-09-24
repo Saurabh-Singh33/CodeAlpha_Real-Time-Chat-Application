@@ -727,9 +727,9 @@ export default function Whiteboard({ roomId, isHost }) {
                   <button 
                     onClick={() => { setTool('circle'); setShowShapes(false); }} 
                     style={shapeItemStyle(tool === 'circle')}
-                    title="Circle"
+                    title="Circle / Ellipse"
                   >
-                    <Circle size={15} /> <span>Circle</span>
+                    <Circle size={15} /> <span>Circle / Ellipse</span>
                   </button>
                   <button 
                     onClick={() => { setTool('triangle'); setShowShapes(false); }} 

@@ -41,7 +41,7 @@ function AdminLayout() {
       {/* Mobile Top Bar */}
       <div className="admin-mobile-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
-          <span style={{ background: '#C8F24A', padding: '4px 8px', borderRadius: '6px' }}>◇</span>
+          <span style={{ background: '#C8F24A', padding: '4px 8px', borderRadius: '6px' }}>V</span>
           VartaConnect Admin
         </div>
         <button className="admin-btn-icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
@@ -53,9 +53,10 @@ function AdminLayout() {
       <aside className={`admin-sidebar ${mobileMenuOpen ? 'open' : ''}`}>
         <div>
           <div className="admin-brand">
-            <div className="admin-brand-icon">◇</div>
+            <div className="admin-brand-icon">V</div>
             <div className="admin-brand-title">VartaConnect</div>
           </div>
+
 
           <div className="admin-profile-card">
             <div className="admin-avatar">

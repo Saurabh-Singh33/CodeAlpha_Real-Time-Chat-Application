@@ -138,7 +138,7 @@ function AdminUserDetail() {
             <div style={{ background: '#FAFDF5', padding: '16px', borderRadius: '14px', border: '1px solid #E4E4E7' }}>
               <ShieldCheck size={18} style={{ color: '#18181B', marginBottom: '6px' }} />
               <div style={{ fontSize: '24px', fontWeight: 800, color: '#18181B' }}>{metrics.hostedCount || 0}</div>
-              <div style={{ fontSize: '12px', color: '#52525B', fontWeight 700 }}>Hosted Meetings</div>
+              <div style={{ fontSize: '12px', color: '#52525B', fontWeight: 700 }}>Hosted Meetings</div>
             </div>
 
             <div style={{ background: '#FAFDF5', padding: '16px', borderRadius: '14px', border: '1px solid #E4E4E7' }}>
@@ -152,6 +152,7 @@ function AdminUserDetail() {
               <div style={{ fontSize: '24px', fontWeight: 800, color: '#18181B' }}>{metrics.totalMessagesSent || 0}</div>
               <div style={{ fontSize: '12px', color: '#52525B', fontWeight: 700 }}>Messages Sent</div>
             </div>
+
           </div>
         </div>
       </div>

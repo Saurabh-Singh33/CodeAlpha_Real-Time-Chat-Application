@@ -1,15 +1,18 @@
 import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-
 import { GoogleLogin } from '@react-oauth/google';
 import { AuthContext } from '../context/AuthContext';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function Signup({ isModal, onSuccess }) {
   const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { checkAuth } = useContext(AuthContext);
   const navigate = useNavigate();
+
   
   const serverUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : `${window.location.protocol}//${window.location.hostname}:5000`;
 
@@ -128,13 +131,74 @@ export default function Signup({ isModal, onSuccess }) {
 
             <div className="form-group" style={{ marginBottom: '0.8rem' }}>
               <label style={{ fontSize: '0.8rem', marginBottom: '0.2rem' }}>Password</label>
-              <input type="password" name="password" placeholder="Enter your password" value={formData.password} onChange={handleChange} required style={{ padding: '0.6rem 1rem' }} />
+              <div style={{ position: 'relative' }}>
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  name="password" 
+                  placeholder="Enter your password" 
+                  value={formData.password} 
+                  onChange={handleChange} 
+                  required 
+                  style={{ padding: '0.6rem 2.5rem 0.6rem 1rem', width: '100%' }} 
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#94a3b8',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '4px'
+                  }}
+                  title={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <div className="form-group" style={{ marginBottom: '1.2rem' }}>
               <label style={{ fontSize: '0.8rem', marginBottom: '0.2rem' }}>Confirm Password</label>
-              <input type="password" name="confirmPassword" placeholder="Confirm your password" value={formData.confirmPassword} onChange={handleChange} required style={{ padding: '0.6rem 1rem' }} />
+              <div style={{ position: 'relative' }}>
+                <input 
+                  type={showConfirmPassword ? "text" : "password"} 
+                  name="confirmPassword" 
+                  placeholder="Confirm your password" 
+                  value={formData.confirmPassword} 
+                  onChange={handleChange} 
+                  required 
+                  style={{ padding: '0.6rem 2.5rem 0.6rem 1rem', width: '100%' }} 
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#94a3b8',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '4px'
+                  }}
+                  title={showConfirmPassword ? "Hide password" : "Show password"}
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
+
 
             <button type="submit" className="primary-btn" disabled={loading} style={{ padding: '0.7rem' }}>
               {loading ? 'Creating...' : 'Sign Up'}

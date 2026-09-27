@@ -1,4 +1,6 @@
-const API_BASE = '/api/admin';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+const API_BASE = `${BACKEND_URL}/api/admin`;
+
 
 const getHeaders = () => {
   const token = sessionStorage.getItem('adminToken');

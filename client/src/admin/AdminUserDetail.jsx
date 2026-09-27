@@ -86,13 +86,13 @@ function AdminUserDetail() {
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 700 }}>{user.name}</h2>
+            <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 700, color: '#18181B' }}>{user.name}</h2>
             <span className={`admin-badge ${user.status === 'Active' ? 'admin-badge-active' : 'admin-badge-offline'}`}>
               {user.status === 'Active' && <span className="admin-pulse-dot" style={{ width: '6px', height: '6px' }}></span>}
               {user.status}
             </span>
           </div>
-          <p style={{ margin: '4px 0 0 0', color: '#777777', fontSize: '14px' }}>{user.email}</p>
+          <p style={{ margin: '4px 0 0 0', color: '#52525B', fontSize: '14px', fontWeight: 500 }}>{user.email}</p>
         </div>
       </div>
 
@@ -100,61 +100,62 @@ function AdminUserDetail() {
       <div className="admin-dashboard-bottom-grid" style={{ marginBottom: '24px' }}>
         {/* Account Info Card */}
         <div className="admin-card" style={{ marginBottom: 0 }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 700, borderBottom: '1px solid #F0F0EA', paddingBottom: '10px' }}>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 700, borderBottom: '1px solid #EBEBE5', paddingBottom: '10px', color: '#18181B' }}>
             Account Details
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '14px' }}>
             <div>
-              <span style={{ color: '#777777', display: 'block', fontSize: '12px' }}>User ID</span>
-              <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{user._id}</span>
+              <span style={{ color: '#52525B', display: 'block', fontSize: '12px', fontWeight: 600 }}>User ID</span>
+              <span style={{ fontWeight: 600, fontFamily: 'monospace', color: '#18181B' }}>{user._id}</span>
             </div>
             <div>
-              <span style={{ color: '#777777', display: 'block', fontSize: '12px' }}>Auth Provider</span>
-              <span style={{ fontWeight: 600, textTransform: 'capitalize' }}>{user.provider || 'local'}</span>
+              <span style={{ color: '#52525B', display: 'block', fontSize: '12px', fontWeight: 600 }}>Auth Provider</span>
+              <span style={{ fontWeight: 600, textTransform: 'capitalize', color: '#18181B' }}>{user.provider || 'local'}</span>
             </div>
             <div>
-              <span style={{ color: '#777777', display: 'block', fontSize: '12px' }}>Account Joined</span>
-              <span style={{ fontWeight: 600 }}>{formatDate(user.createdAt)}</span>
+              <span style={{ color: '#52525B', display: 'block', fontSize: '12px', fontWeight: 600 }}>Account Joined</span>
+              <span style={{ fontWeight: 600, color: '#18181B' }}>{formatDate(user.createdAt)}</span>
             </div>
             <div>
-              <span style={{ color: '#777777', display: 'block', fontSize: '12px' }}>Last Active Timestamp</span>
-              <span style={{ fontWeight: 600 }}>{formatDate(user.updatedAt)}</span>
+              <span style={{ color: '#52525B', display: 'block', fontSize: '12px', fontWeight: 600 }}>Last Active Timestamp</span>
+              <span style={{ fontWeight: 600, color: '#18181B' }}>{formatDate(user.updatedAt)}</span>
             </div>
           </div>
         </div>
 
         {/* Meeting & Activity Stats Card */}
         <div className="admin-card" style={{ marginBottom: 0 }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 700, borderBottom: '1px solid #F0F0EA', paddingBottom: '10px' }}>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 700, borderBottom: '1px solid #EBEBE5', paddingBottom: '10px', color: '#18181B' }}>
             Meeting & Activity Metrics
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
-            <div style={{ background: '#FAFDF5', padding: '16px', borderRadius: '14px', border: '1px solid #F0F0EA' }}>
-              <Video size={18} style={{ color: '#202020', marginBottom: '6px' }} />
-              <div style={{ fontSize: '24px', fontWeight: 800 }}>{metrics.totalMeetings || 0}</div>
-              <div style={{ fontSize: '12px', color: '#777777', fontWeight: 600 }}>Total Meetings</div>
+            <div style={{ background: '#FAFDF5', padding: '16px', borderRadius: '14px', border: '1px solid #E4E4E7' }}>
+              <Video size={18} style={{ color: '#18181B', marginBottom: '6px' }} />
+              <div style={{ fontSize: '24px', fontWeight: 800, color: '#18181B' }}>{metrics.totalMeetings || 0}</div>
+              <div style={{ fontSize: '12px', color: '#52525B', fontWeight: 700 }}>Total Meetings</div>
             </div>
 
-            <div style={{ background: '#FAFDF5', padding: '16px', borderRadius: '14px', border: '1px solid #F0F0EA' }}>
-              <ShieldCheck size={18} style={{ color: '#202020', marginBottom: '6px' }} />
-              <div style={{ fontSize: '24px', fontWeight: 800 }}>{metrics.hostedCount || 0}</div>
-              <div style={{ fontSize: '12px', color: '#777777', fontWeight: 600 }}>Hosted Meetings</div>
+            <div style={{ background: '#FAFDF5', padding: '16px', borderRadius: '14px', border: '1px solid #E4E4E7' }}>
+              <ShieldCheck size={18} style={{ color: '#18181B', marginBottom: '6px' }} />
+              <div style={{ fontSize: '24px', fontWeight: 800, color: '#18181B' }}>{metrics.hostedCount || 0}</div>
+              <div style={{ fontSize: '12px', color: '#52525B', fontWeight 700 }}>Hosted Meetings</div>
             </div>
 
-            <div style={{ background: '#FAFDF5', padding: '16px', borderRadius: '14px', border: '1px solid #F0F0EA' }}>
-              <User size={18} style={{ color: '#202020', marginBottom: '6px' }} />
-              <div style={{ fontSize: '24px', fontWeight 800 }}>{metrics.joinedCount || 0}</div>
-              <div style={{ fontSize: '12px', color: '#777777', fontWeight 600 }}>Joined Meetings</div>
+            <div style={{ background: '#FAFDF5', padding: '16px', borderRadius: '14px', border: '1px solid #E4E4E7' }}>
+              <User size={18} style={{ color: '#18181B', marginBottom: '6px' }} />
+              <div style={{ fontSize: '24px', fontWeight: 800, color: '#18181B' }}>{metrics.joinedCount || 0}</div>
+              <div style={{ fontSize: '12px', color: '#52525B', fontWeight: 700 }}>Joined Meetings</div>
             </div>
 
-            <div style={{ background: '#FAFDF5', padding: '16px', borderRadius: '14px', border: '1px solid #F0F0EA' }}>
-              <MessageSquare size={18} style={{ color: '#202020', marginBottom: '6px' }} />
-              <div style={{ fontSize: '24px', fontWeight: 800 }}>{metrics.totalMessagesSent || 0}</div>
-              <div style={{ fontSize: '12px', color: '#777777', fontWeight: 600 }}>Messages Sent</div>
+            <div style={{ background: '#FAFDF5', padding: '16px', borderRadius: '14px', border: '1px solid #E4E4E7' }}>
+              <MessageSquare size={18} style={{ color: '#18181B', marginBottom: '6px' }} />
+              <div style={{ fontSize: '24px', fontWeight: 800, color: '#18181B' }}>{metrics.totalMessagesSent || 0}</div>
+              <div style={{ fontSize: '12px', color: '#52525B', fontWeight: 700 }}>Messages Sent</div>
             </div>
           </div>
         </div>
       </div>
+
 
       {/* Recent Meetings Table */}
       <div className="admin-card">

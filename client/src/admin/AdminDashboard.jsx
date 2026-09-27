@@ -114,8 +114,9 @@ function AdminDashboard() {
     <div>
       <div className="admin-header">
         <div>
-          <h1 className="admin-greeting">{getGreeting()}, {adminName} 👋</h1>
+          <h1 className="admin-greeting">{getGreeting()}, {adminName}</h1>
           <p className="admin-subtext">Here's what's happening across VartaConnect today.</p>
+
         </div>
       </div>
 

@@ -17,6 +17,16 @@ import ServicesPage from './pages/ServicesPage';
 import Contact from './pages/Contact';
 import AiChatbotPage from './pages/AiChatbotPage';
 
+// Admin Isolated Module Components
+import AdminLogin from './admin/AdminLogin';
+import AdminLayout from './admin/AdminLayout';
+import AdminDashboard from './admin/AdminDashboard';
+import AdminUsers from './admin/AdminUsers';
+import AdminUserDetail from './admin/AdminUserDetail';
+import AdminMeetings from './admin/AdminMeetings';
+import AdminActivity from './admin/AdminActivity';
+import AdminSettings from './admin/AdminSettings';
+
 function ProtectedRoute({ children }) {
   const { user, loading } = useContext(AuthContext);
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'white' }}>Loading...</div>;
@@ -40,6 +50,18 @@ function App() {
         <AuthProvider>
           <SocketProvider>
             <Routes>
+              {/* Isolated Admin Module Routes */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<Navigate to="/admin/dashboard" replace />} />
+                <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="users/:id" element={<AdminUserDetail />} />
+                <Route path="meetings" element={<AdminMeetings />} />
+                <Route path="activity" element={<AdminActivity />} />
+                <Route path="settings" element={<AdminSettings />} />
+              </Route>
+
               <Route path="/login" element={<PublicRoute><Landing /></PublicRoute>} />
               <Route path="/signup" element={<PublicRoute><Landing /></PublicRoute>} />
               <Route path="/verify-otp" element={<PublicRoute><VerifyOtp /></PublicRoute>} />
@@ -78,3 +100,4 @@ function App() {
 }
 
 export default App;
+

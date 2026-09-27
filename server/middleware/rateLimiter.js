@@ -16,4 +16,13 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-module.exports = { otpLimiter, loginLimiter };
+const adminLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 admin login attempts per windowMs
+  message: { success: false, message: 'Too many admin login attempts from this IP, please try again after 15 minutes' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+module.exports = { otpLimiter, loginLimiter, adminLoginLimiter };
+

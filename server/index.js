@@ -7,6 +7,7 @@ const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/auth');
 const meetingRoutes = require('./routes/meetings');
 const aiMeetingRoutes = require('./routes/aiMeeting');
+const adminRoutes = require('./routes/admin');
 const Room = require('./models/Room');
 const Message = require('./models/Message');
 const connectDB = require('./config/db');
@@ -28,6 +29,8 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 app.use('/api/meetings', meetingRoutes);
 app.use('/api/ai-meeting', aiMeetingRoutes);
+app.use('/api/admin', adminRoutes);
+
 
 // API to fetch room messages from MongoDB
 app.get('/api/messages/:roomId', async (req, res) => {
@@ -122,8 +125,24 @@ const io = new Server(server, {
 const rooms = {};
 // Map of room AI assistant state
 const aiMeetingStates = {};
+// Set of active user emails
+const activeEmailsSet = new Set();
+
+app.set('getActiveRooms', () => rooms);
+app.set('getAiMeetingStates', () => aiMeetingStates);
+app.set('getActiveSocketsCount', () => io.engine ? io.engine.clientsCount : 0);
+app.set('getActiveSocketEmails', () => activeEmailsSet);
 
 io.on('connection', (socket) => {
+
+  // Admin Dashboard Socket Join
+  socket.on('join-admin-room', () => {
+    socket.join('admin-room');
+    socket.emit('admin:stats-update', {
+      activeNow: io.engine ? io.engine.clientsCount : 0,
+      activeRoomsCount: Object.keys(rooms).length
+    });
+  });
 
   socket.on('join-room', async (roomId, username, userEmail) => {
     socket.join(roomId);
@@ -131,6 +150,12 @@ io.on('connection', (socket) => {
     // Store user info on the socket for other events
     socket.roomId = roomId;
     socket.username = username;
+    socket.userEmail = userEmail;
+    
+    if (userEmail) {
+      activeEmailsSet.add(userEmail.toLowerCase());
+      io.to('admin-room').emit('admin:user-online', { username, email: userEmail, roomId });
+    }
     
     let isHost = false;
     try {
@@ -144,10 +169,21 @@ io.on('connection', (socket) => {
       console.error('Error verifying host:', err);
     }
     
+    const isNewMeeting = !rooms[roomId] || Object.keys(rooms[roomId]).length === 0;
+    
     if (!rooms[roomId]) {
       rooms[roomId] = {};
     }
-    rooms[roomId][socket.id] = { username, id: socket.id, isHost };
+    rooms[roomId][socket.id] = { username, email: userEmail, id: socket.id, isHost };
+
+    if (isNewMeeting) {
+      io.to('admin-room').emit('admin:meeting-started', { roomId, host: username });
+    }
+
+    io.to('admin-room').emit('admin:stats-update', {
+      activeNow: io.engine ? io.engine.clientsCount : 0,
+      activeRoomsCount: Object.keys(rooms).length
+    });
 
     socket.emit('room-joined', { isHost });
 
@@ -163,6 +199,7 @@ io.on('connection', (socket) => {
 
     console.log(`${username} (${socket.id}) joined room ${roomId}`);
   });
+
 
   // Host-Only AI Meeting Assistant Toggle
   socket.on('toggle-ai-meeting-notes', ({ roomId, enabled }) => {
@@ -320,6 +357,10 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     const roomId = socket.roomId;
+    if (socket.userEmail) {
+      activeEmailsSet.delete(socket.userEmail.toLowerCase());
+      io.to('admin-room').emit('admin:user-offline', { username: socket.username, email: socket.userEmail, roomId });
+    }
     if (socket.username && roomId) {
       console.log(`${socket.username} left room ${roomId}`);
     }
@@ -331,9 +372,16 @@ io.on('connection', (socket) => {
       if (Object.keys(rooms[roomId]).length === 0) {
         delete rooms[roomId];
         delete aiMeetingStates[roomId];
+        io.to('admin-room').emit('admin:meeting-ended', { roomId });
       }
     }
+
+    io.to('admin-room').emit('admin:stats-update', {
+      activeNow: io.engine ? io.engine.clientsCount : 0,
+      activeRoomsCount: Object.keys(rooms).length
+    });
   });
+
 });
 
 const PORT = process.env.PORT || 5000;

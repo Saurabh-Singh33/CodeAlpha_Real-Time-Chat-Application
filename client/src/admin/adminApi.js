@@ -47,6 +47,49 @@ export const adminLogin = async (email, password) => {
   return data;
 };
 
+export const sendAdminForgotPasswordOtp = async (email) => {
+  const response = await fetch(`${API_BASE}/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || 'Failed to send OTP code');
+  }
+  return data;
+};
+
+export const verifyAdminResetOtp = async (email, otp) => {
+  const response = await fetch(`${API_BASE}/verify-reset-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, otp })
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || 'Invalid OTP code');
+  }
+  return data;
+};
+
+export const resetAdminPassword = async (email, otp, newPassword) => {
+  const response = await fetch(`${API_BASE}/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, otp, newPassword })
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || 'Failed to reset admin password');
+  }
+  return data;
+};
+
+
 export const getAdminStats = async () => {
   const response = await fetch(`${API_BASE}/stats`, {
     headers: getHeaders()

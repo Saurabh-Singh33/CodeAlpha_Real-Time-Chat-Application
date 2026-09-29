@@ -167,4 +167,62 @@ const sendContactEmail = async ({ name, email, subject, category, message }) => 
   return info;
 };
 
-module.exports = { sendMeetingInvite, sendContactEmail };
+const sendAdminResetOtpEmail = async ({ toEmail, otpCode }) => {
+  const gmailUser = process.env.SMTP_USER;
+  const gmailPass = process.env.SMTP_PASSWORD;
+
+  if (!gmailUser || !gmailPass) {
+    throw new Error('SMTP credentials not configured in server/.env file');
+  }
+
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: gmailUser,
+      pass: gmailPass
+    }
+  });
+
+  const appName = process.env.APP_NAME || 'VartaConnect';
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #F7F7F3; color: #18181B; margin: 0; padding: 20px; }
+        .container { max-width: 520px; margin: 0 auto; background: #FFFFFF; border: 1px solid #EBEBE5; border-radius: 20px; padding: 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        .logo { font-size: 20px; font-weight: 800; color: #18181B; margin-bottom: 20px; }
+        h2 { font-size: 22px; font-weight: 700; color: #18181B; margin-top: 0; margin-bottom: 8px; }
+        p { font-size: 15px; color: #52525B; line-height: 1.6; margin-bottom: 24px; }
+        .otp-box { background: #F2FCD4; border: 1px solid #C8F24A; border-radius: 16px; padding: 20px; text-align: center; font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #18181B; margin-bottom: 24px; }
+        .footer { font-size: 12px; color: #71717A; text-align: center; border-top: 1px solid #EBEBE5; padding-top: 20px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="logo">${appName} Admin</div>
+        <h2>Admin Password Reset OTP</h2>
+        <p>You requested an Admin Password Reset for <strong>${toEmail}</strong>. Use the 6-digit OTP code below to verify your identity and set a new admin password. This code is valid for 10 minutes.</p>
+        <div class="otp-box">${otpCode}</div>
+        <p style="font-size: 13px; color: #71717A;">If you did not request this password reset, please ignore this email or review your server security.</p>
+        <div class="footer">${appName} Administrative Portal Security</div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const mailOptions = {
+    from: `"${appName} Admin Security" <${gmailUser}>`,
+    to: toEmail,
+    subject: `🔐 Admin Password Reset OTP Code: ${otpCode}`,
+    html: htmlContent
+  };
+
+  const info = await transporter.sendMail(mailOptions);
+  return info;
+};
+
+module.exports = { sendMeetingInvite, sendContactEmail, sendAdminResetOtpEmail };
+

@@ -1,6 +1,8 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
+const fs = require('fs');
+const path = require('path');
 
 const User = require('../models/User');
 const Meeting = require('../models/Meeting');
@@ -9,6 +11,11 @@ const Message = require('../models/Message');
 const MeetingAIAnalysis = require('../models/MeetingAIAnalysis');
 const AdminLog = require('../models/AdminLog');
 const ActivityLog = require('../models/ActivityLog');
+const { sendAdminResetOtpEmail } = require('../mailer');
+
+// Memory store for admin OTP reset
+const adminOtpStore = {};
+
 
 // Helper to write audit logs
 const logAdminAction = async (adminEmail, action, targetId = null, details = '', ipAddress = '') => {
@@ -558,25 +565,143 @@ const getSystemStatus = async (req, res) => {
   }
 };
 
-// GET /api/admin/audit-logs
-const getAuditLogs = async (req, res) => {
+// POST /api/admin/forgot-password
+const forgotPassword = async (req, res) => {
   try {
-    const logs = await AdminLog.find({})
-      .sort({ timestamp: -1 })
-      .limit(20);
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Admin email is required' });
+    }
+
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (!adminEmail) {
+      return res.status(500).json({ success: false, message: 'ADMIN_EMAIL not configured in server environment' });
+    }
+
+    // STRICT CHECK: Only process if email matches process.env.ADMIN_EMAIL strictly!
+    if (email.trim().toLowerCase() !== adminEmail.trim().toLowerCase()) {
+      return res.status(400).json({ success: false, message: 'Invalid admin email address.' });
+    }
+
+    // Generate random 6-digit numeric OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    adminOtpStore[adminEmail.toLowerCase()] = {
+      otp: otpCode,
+      expiresAt
+    };
+
+    await sendAdminResetOtpEmail({ toEmail: adminEmail, otpCode });
+
+    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+    await logAdminAction(adminEmail, 'admin_otp_requested', null, 'Admin password reset OTP sent to Gmail', clientIp);
 
     return res.json({
       success: true,
-      auditLogs: logs
+      message: `OTP code sent to your registered admin email (${adminEmail}).`
     });
   } catch (error) {
-    console.error('Error fetching audit logs:', error);
-    return res.status(500).json({ success: false, message: 'Failed to fetch audit logs' });
+    console.error('Admin Forgot Password Error:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Failed to send OTP email' });
+  }
+};
+
+// POST /api/admin/verify-reset-otp
+const verifyResetOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    const adminEmail = process.env.ADMIN_EMAIL;
+
+    if (!email || !otp || email.trim().toLowerCase() !== (adminEmail || '').trim().toLowerCase()) {
+      return res.status(400).json({ success: false, message: 'Invalid OTP request' });
+    }
+
+    const storedData = adminOtpStore[adminEmail.toLowerCase()];
+    if (!storedData || storedData.otp !== otp.trim()) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP code' });
+    }
+
+    if (Date.now() > storedData.expiresAt) {
+      delete adminOtpStore[adminEmail.toLowerCase()];
+      return res.status(400).json({ success: false, message: 'OTP code has expired. Please request a new one.' });
+    }
+
+    return res.json({
+      success: true,
+      message: 'OTP verified successfully'
+    });
+  } catch (error) {
+    console.error('Admin Verify OTP Error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to verify OTP' });
+  }
+};
+
+// POST /api/admin/reset-password
+const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    const adminEmail = process.env.ADMIN_EMAIL;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Email, OTP, and new password are required' });
+    }
+
+    if (email.trim().toLowerCase() !== (adminEmail || '').trim().toLowerCase()) {
+      return res.status(400).json({ success: false, message: 'Invalid admin reset request' });
+    }
+
+    const storedData = adminOtpStore[adminEmail.toLowerCase()];
+    if (!storedData || storedData.otp !== otp.trim()) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP code' });
+    }
+
+    if (Date.now() > storedData.expiresAt) {
+      delete adminOtpStore[adminEmail.toLowerCase()];
+      return res.status(400).json({ success: false, message: 'OTP code has expired. Please request a new one.' });
+    }
+
+    // Hash new password
+    const newHash = await bcrypt.hash(newPassword, 10);
+    process.env.ADMIN_PASSWORD_HASH = newHash;
+
+    // Update server/.env file on disk so the new hash persists across restarts!
+    try {
+      const envPath = path.join(__dirname, '../.env');
+      if (fs.existsSync(envPath)) {
+        let envContent = fs.readFileSync(envPath, 'utf8');
+        if (envContent.includes('ADMIN_PASSWORD_HASH=')) {
+          envContent = envContent.replace(/ADMIN_PASSWORD_HASH=.*/g, `ADMIN_PASSWORD_HASH=${newHash}`);
+        } else {
+          envContent += `\nADMIN_PASSWORD_HASH=${newHash}\n`;
+        }
+        fs.writeFileSync(envPath, envContent, 'utf8');
+      }
+    } catch (err) {
+      console.error('Warning: Failed to persist new ADMIN_PASSWORD_HASH to .env file:', err.message);
+    }
+
+    // Clear stored OTP
+    delete adminOtpStore[adminEmail.toLowerCase()];
+
+    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+    await logAdminAction(adminEmail, 'admin_password_reset', null, 'Admin password reset successfully via OTP', clientIp);
+
+    return res.json({
+      success: true,
+      message: 'Admin password reset successfully. You can now log in with your new password.'
+    });
+  } catch (error) {
+    console.error('Admin Reset Password Error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to reset admin password' });
   }
 };
 
 module.exports = {
   login,
+  forgotPassword,
+  verifyResetOtp,
+  resetPassword,
   getStats,
   getUsers,
   getUserById,
@@ -587,3 +712,4 @@ module.exports = {
   getSystemStatus,
   getAuditLogs
 };
+

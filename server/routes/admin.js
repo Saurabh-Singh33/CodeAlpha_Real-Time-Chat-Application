@@ -4,11 +4,15 @@ const adminController = require('../controllers/adminController');
 const adminAuth = require('../middleware/adminAuth');
 const { adminLoginLimiter } = require('../middleware/rateLimiter');
 
-// Public route for admin authentication with strict rate limiting
+// Public routes for admin authentication and password recovery (rate limited)
 router.post('/login', adminLoginLimiter, adminController.login);
+router.post('/forgot-password', adminLoginLimiter, adminController.forgotPassword);
+router.post('/verify-reset-otp', adminLoginLimiter, adminController.verifyResetOtp);
+router.post('/reset-password', adminLoginLimiter, adminController.resetPassword);
 
 // Protected admin routes requiring valid JWT
 router.use(adminAuth);
+
 
 router.get('/stats', adminController.getStats);
 router.get('/users', adminController.getUsers);

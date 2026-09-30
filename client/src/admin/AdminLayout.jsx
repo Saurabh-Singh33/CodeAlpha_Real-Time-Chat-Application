@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Video, Clock, Settings, LogOut, Menu, X, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Users, Video, Clock, Settings, LogOut, Menu, X, Sparkles, UserCircle } from 'lucide-react';
 import './admin.css';
 
 function AdminLayout() {
@@ -24,6 +24,17 @@ function AdminLayout() {
         // Fallback default
       }
     }
+
+    const handleStorageChange = () => {
+      const updatedUser = sessionStorage.getItem('adminUser');
+      if (updatedUser) {
+        try {
+          setAdminUser(JSON.parse(updatedUser));
+        } catch (err) {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, [navigate, location]);
 
   const handleLogout = () => {
@@ -114,6 +125,15 @@ function AdminLayout() {
             >
               <Sparkles size={18} />
               <span>AI Usage</span>
+            </NavLink>
+
+            <NavLink
+              to="/admin/profile"
+              className={({ isActive }) => `admin-nav-link ${isActive ? 'active' : ''}`}
+              onClick={closeMobileMenu}
+            >
+              <UserCircle size={18} />
+              <span>Profile</span>
             </NavLink>
 
             <NavLink

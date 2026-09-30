@@ -79,6 +79,17 @@ function AdminDashboard() {
       } catch (err) {}
     }
 
+    const handleStorageChange = () => {
+      const updatedUser = sessionStorage.getItem('adminUser');
+      if (updatedUser) {
+        try {
+          const u = JSON.parse(updatedUser);
+          if (u.name) setAdminName(u.name);
+        } catch (err) {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
     fetchDashboardData();
 
     // 30-Second Fallback Polling on Dashboard
@@ -120,6 +131,7 @@ function AdminDashboard() {
     return () => {
       clearInterval(interval);
       socket.disconnect();
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
 

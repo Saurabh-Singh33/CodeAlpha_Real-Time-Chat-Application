@@ -27,6 +27,7 @@ import AdminMeetings from './admin/AdminMeetings';
 import AdminActivity from './admin/AdminActivity';
 import AdminAiUsage from './admin/AdminAiUsage';
 import AdminSettings from './admin/AdminSettings';
+import AdminProfile from './admin/AdminProfile';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useContext(AuthContext);
@@ -61,6 +62,7 @@ function App() {
                 <Route path="meetings" element={<AdminMeetings />} />
                 <Route path="activity" element={<AdminActivity />} />
                 <Route path="ai-usage" element={<AdminAiUsage />} />
+                <Route path="profile" element={<AdminProfile />} />
                 <Route path="settings" element={<AdminSettings />} />
               </Route>
 

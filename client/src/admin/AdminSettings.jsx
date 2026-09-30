@@ -26,6 +26,8 @@ function AdminSettings() {
             else if (geminiData.status === 'quota_exceeded') updatedStatus.gemini = 'Rate-limited';
             else if (geminiData.status === 'invalid_key') updatedStatus.gemini = 'Error';
             else updatedStatus.gemini = 'Error';
+            
+            updatedStatus.geminiError = geminiData.message;
           }
           setSystemStatus(updatedStatus);
         }
@@ -131,7 +133,14 @@ function AdminSettings() {
                 <Sparkles size={16} style={{ color: '#18181B' }} />
                 <span style={{ fontWeight: 600, fontSize: '14px', color: '#18181B' }}>Gemini AI Engine</span>
               </div>
-              {getStatusBadge(systemStatus ? systemStatus.gemini : 'Available')}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                {getStatusBadge(systemStatus ? systemStatus.gemini : 'Available')}
+                {systemStatus?.geminiError && systemStatus.gemini !== 'Available' && (
+                  <span style={{ fontSize: '11px', color: '#EF4444', marginTop: '4px', maxWidth: '150px', textAlign: 'right' }}>
+                    {systemStatus.geminiError}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>

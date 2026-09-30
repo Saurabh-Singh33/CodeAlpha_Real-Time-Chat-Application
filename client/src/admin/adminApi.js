@@ -177,3 +177,28 @@ export const getAdminGeminiStatus = async () => {
   });
   return handleResponse(response);
 };
+
+export const getAdminProfile = async () => {
+  const response = await fetch(`${API_BASE}/profile`, {
+    headers: getHeaders()
+  });
+  return handleResponse(response);
+};
+
+export const updateAdminProfile = async (data) => {
+  const response = await fetch(`${API_BASE}/profile`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify(data)
+  });
+  return handleResponse(response);
+};
+
+export const updateAdminPassword = async (data) => {
+  const response = await fetch(`${API_BASE}/profile/password`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify(data)
+  });
+  return handleResponse(response);
+};

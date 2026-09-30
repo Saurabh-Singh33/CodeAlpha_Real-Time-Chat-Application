@@ -167,7 +167,7 @@ function AdminDashboard() {
           <div className="admin-stat-header">
             <span className="admin-stat-title">Total Users</span>
             <div className="admin-stat-icon-wrap">
-              <Users size={20} />
+              <Users size={18} />
             </div>
           </div>
           <div className="admin-stat-value">
@@ -182,7 +182,7 @@ function AdminDashboard() {
           <div className="admin-stat-header">
             <span className="admin-stat-title">Total Meetings</span>
             <div className="admin-stat-icon-wrap">
-              <Video size={20} />
+              <Video size={18} />
             </div>
           </div>
           <div className="admin-stat-value">
@@ -197,7 +197,7 @@ function AdminDashboard() {
           <div className="admin-stat-header">
             <span className="admin-stat-title">Active Now</span>
             <div className="admin-stat-icon-wrap">
-              <Activity size={20} color="#10B981" />
+              <Activity size={18} color="#10B981" />
             </div>
           </div>
           <div className="admin-stat-value" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -210,7 +210,7 @@ function AdminDashboard() {
           <div className="admin-stat-header">
             <span className="admin-stat-title">Messages</span>
             <div className="admin-stat-icon-wrap">
-              <MessageSquare size={20} />
+              <MessageSquare size={18} />
             </div>
           </div>
           <div className="admin-stat-value">
@@ -223,12 +223,12 @@ function AdminDashboard() {
       </div>
 
       {/* Second Row: 4 Secondary Stat Cards */}
-      <div className="admin-stats-grid" style={{ marginTop: '20px' }}>
+      <div className="admin-stats-grid">
         <div className="admin-stat-card">
           <div className="admin-stat-header">
             <span className="admin-stat-title">New Users Today</span>
             <div className="admin-stat-icon-wrap" style={{ background: '#F0F9FF', color: '#0EA5E9' }}>
-              <UserPlus size={20} />
+              <UserPlus size={18} />
             </div>
           </div>
           <div className="admin-stat-value">
@@ -240,7 +240,7 @@ function AdminDashboard() {
           <div className="admin-stat-header">
             <span className="admin-stat-title">Meetings Today</span>
             <div className="admin-stat-icon-wrap" style={{ background: '#FEF2F2', color: '#EF4444' }}>
-              <Video size={20} />
+              <Video size={18} />
             </div>
           </div>
           <div className="admin-stat-value">
@@ -252,7 +252,7 @@ function AdminDashboard() {
           <div className="admin-stat-header">
             <span className="admin-stat-title">AI Summaries Generated</span>
             <div className="admin-stat-icon-wrap" style={{ background: '#FAF5FF', color: '#A855F7' }}>
-              <Bot size={20} />
+              <Bot size={18} />
             </div>
           </div>
           <div className="admin-stat-value">
@@ -267,10 +267,10 @@ function AdminDashboard() {
           <div className="admin-stat-header">
             <span className="admin-stat-title">System Health</span>
             <div className="admin-stat-icon-wrap" style={{ background: '#F8FAFC', color: '#64748B' }}>
-              <Activity size={20} />
+              <Activity size={18} />
             </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#4B5563' }}><Server size={14} /> Backend</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, color: systemHealth.backend === 'Online' ? '#22c55e' : '#ef4444' }}>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Video, Clock, Settings, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, Video, Clock, Settings, LogOut, Menu, X, Sparkles } from 'lucide-react';
 import './admin.css';
 
 function AdminLayout() {
@@ -106,6 +106,15 @@ function AdminLayout() {
             </NavLink>
 
             <div className="admin-nav-divider"></div>
+
+            <NavLink
+              to="/admin/ai-usage"
+              className={({ isActive }) => `admin-nav-link ${isActive ? 'active' : ''}`}
+              onClick={closeMobileMenu}
+            >
+              <Sparkles size={18} />
+              <span>AI Usage</span>
+            </NavLink>
 
             <NavLink
               to="/admin/settings"

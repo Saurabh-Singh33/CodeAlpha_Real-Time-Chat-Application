@@ -281,14 +281,14 @@
 .admin-stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  margin-bottom: 28px;
+  gap: 16px;
+  margin-bottom: 16px;
 }
 
 .admin-stat-card {
   background-color: var(--admin-card-bg) !important;
   border-radius: 20px;
-  padding: 22px;
+  padding: 16px;
   box-shadow: var(--admin-shadow);
   border: 1px solid var(--admin-border-subtle);
   display: flex;
@@ -318,8 +318,8 @@
 }
 
 .admin-stat-icon-wrap {
-  width: 38px;
-  height: 38px;
+  width: 32px;
+  height: 32px;
   border-radius: 12px;
   background-color: var(--admin-bg) !important;
   display: flex;
@@ -329,7 +329,7 @@
 }
 
 .admin-stat-value {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 800;
   color: #18181B !important;
   letter-spacing: -1px;

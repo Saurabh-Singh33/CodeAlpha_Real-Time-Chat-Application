@@ -25,6 +25,7 @@ import AdminUsers from './admin/AdminUsers';
 import AdminUserDetail from './admin/AdminUserDetail';
 import AdminMeetings from './admin/AdminMeetings';
 import AdminActivity from './admin/AdminActivity';
+import AdminAiUsage from './admin/AdminAiUsage';
 import AdminSettings from './admin/AdminSettings';
 
 function ProtectedRoute({ children }) {
@@ -59,6 +60,7 @@ function App() {
                 <Route path="users/:id" element={<AdminUserDetail />} />
                 <Route path="meetings" element={<AdminMeetings />} />
                 <Route path="activity" element={<AdminActivity />} />
+                <Route path="ai-usage" element={<AdminAiUsage />} />
                 <Route path="settings" element={<AdminSettings />} />
               </Route>
 

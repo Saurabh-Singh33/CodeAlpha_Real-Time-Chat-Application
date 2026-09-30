@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { getAdminStats } from './adminApi';
-import { Users, Video, MessageSquare, Radio, AlertCircle, ArrowUpRight, Clock, ShieldAlert } from 'lucide-react';
+import { getAdminStats, getAdminTodayStats, getAdminSystemStatus, getAdminGeminiStatus } from './adminApi';
+import { Users, Video, MessageSquare, Activity, AlertCircle, ArrowUpRight, Clock, ShieldAlert, UserPlus, LogOut, LogIn, Server, Database, Bot } from 'lucide-react';
 import io from 'socket.io-client';
 import './admin.css';
 
@@ -12,6 +12,17 @@ function AdminDashboard() {
     activeNow: 0,
     totalMessages: 0
   });
+  const [todayStats, setTodayStats] = useState({
+    newUsersToday: 0,
+    meetingsToday: 0,
+    aiSummariesToday: 0,
+    totalAiSummaries: 0
+  });
+  const [systemHealth, setSystemHealth] = useState({
+    backend: 'Checking...',
+    database: 'Checking...',
+    gemini: 'Checking...'
+  });
   const [recentMeetings, setRecentMeetings] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,12 +32,35 @@ function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const data = await getAdminStats();
+      const [data, todayData, sysData, geminiData] = await Promise.all([
+        getAdminStats(),
+        getAdminTodayStats().catch(() => ({ success: false })),
+        getAdminSystemStatus().catch(() => ({ success: false })),
+        getAdminGeminiStatus().catch(() => ({ status: 'error' }))
+      ]);
+
       if (data.success) {
         setStats(data.stats);
         setRecentMeetings(data.recentMeetings || []);
         setRecentActivity(data.recentActivity || []);
         setError(null);
+      }
+      if (todayData.success) {
+        setTodayStats(todayData);
+      }
+      if (sysData.success) {
+        setSystemHealth(prev => ({
+          ...prev,
+          backend: sysData.status.backend,
+          database: sysData.status.database
+        }));
+      }
+      if (geminiData) {
+        let geminiDisplay = 'Error';
+        if (geminiData.status === 'ok') geminiDisplay = 'Available';
+        else if (geminiData.status === 'quota_exceeded') geminiDisplay = 'Rate-limited';
+        else if (geminiData.status === 'invalid_key') geminiDisplay = 'Error';
+        setSystemHealth(prev => ({ ...prev, gemini: geminiDisplay }));
       }
     } catch (err) {
       console.error('Failed to fetch admin stats:', err);
@@ -114,7 +148,7 @@ function AdminDashboard() {
     <div>
       <div className="admin-header">
         <div>
-          <h1 className="admin-greeting">{getGreeting()}, {adminName}</h1>
+          <h1 className="admin-greeting">{getGreeting()}, {adminName} 👋</h1>
           <p className="admin-subtext">Here's what's happening across VartaConnect today.</p>
 
         </div>
@@ -139,6 +173,9 @@ function AdminDashboard() {
           <div className="admin-stat-value">
             {loading ? '...' : stats.totalUsers.toLocaleString()}
           </div>
+          <div style={{ fontSize: '12px', color: '#10B981', marginTop: '4px', fontWeight: 600 }}>
+            +{todayStats.newUsersToday} today
+          </div>
         </div>
 
         <div className="admin-stat-card">
@@ -151,16 +188,19 @@ function AdminDashboard() {
           <div className="admin-stat-value">
             {loading ? '...' : stats.totalMeetings.toLocaleString()}
           </div>
+          <div style={{ fontSize: '12px', color: '#10B981', marginTop: '4px', fontWeight: 600 }}>
+            +{todayStats.meetingsToday} today
+          </div>
         </div>
 
         <div className="admin-stat-card">
           <div className="admin-stat-header">
             <span className="admin-stat-title">Active Now</span>
             <div className="admin-stat-icon-wrap">
-              <Radio size={20} color="#10B981" />
+              <Activity size={20} color="#10B981" />
             </div>
           </div>
-          <div className="admin-stat-value">
+          <div className="admin-stat-value" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {loading ? '...' : stats.activeNow}
             <span className="admin-pulse-dot" title="Live Socket.IO Stream"></span>
           </div>
@@ -175,6 +215,83 @@ function AdminDashboard() {
           </div>
           <div className="admin-stat-value">
             {loading ? '...' : stats.totalMessages.toLocaleString()}
+          </div>
+          <div style={{ fontSize: '12px', color: '#10B981', marginTop: '4px', fontWeight: 600 }}>
+            +0 today
+          </div>
+        </div>
+      </div>
+
+      {/* Second Row: 4 Secondary Stat Cards */}
+      <div className="admin-stats-grid" style={{ marginTop: '20px' }}>
+        <div className="admin-stat-card">
+          <div className="admin-stat-header">
+            <span className="admin-stat-title">New Users Today</span>
+            <div className="admin-stat-icon-wrap" style={{ background: '#F0F9FF', color: '#0EA5E9' }}>
+              <UserPlus size={20} />
+            </div>
+          </div>
+          <div className="admin-stat-value">
+            {loading ? '...' : todayStats.newUsersToday.toLocaleString()}
+          </div>
+        </div>
+
+        <div className="admin-stat-card">
+          <div className="admin-stat-header">
+            <span className="admin-stat-title">Meetings Today</span>
+            <div className="admin-stat-icon-wrap" style={{ background: '#FEF2F2', color: '#EF4444' }}>
+              <Video size={20} />
+            </div>
+          </div>
+          <div className="admin-stat-value">
+            {loading ? '...' : todayStats.meetingsToday.toLocaleString()}
+          </div>
+        </div>
+
+        <div className="admin-stat-card">
+          <div className="admin-stat-header">
+            <span className="admin-stat-title">AI Summaries Generated</span>
+            <div className="admin-stat-icon-wrap" style={{ background: '#FAF5FF', color: '#A855F7' }}>
+              <Bot size={20} />
+            </div>
+          </div>
+          <div className="admin-stat-value">
+            {loading ? '...' : todayStats.totalAiSummaries.toLocaleString()}
+          </div>
+          <div style={{ fontSize: '12px', color: '#10B981', marginTop: '4px', fontWeight: 600 }}>
+            {todayStats.aiSummariesToday} generated in last 24h
+          </div>
+        </div>
+
+        <div className="admin-stat-card">
+          <div className="admin-stat-header">
+            <span className="admin-stat-title">System Health</span>
+            <div className="admin-stat-icon-wrap" style={{ background: '#F8FAFC', color: '#64748B' }}>
+              <Activity size={20} />
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#4B5563' }}><Server size={14} /> Backend</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, color: systemHealth.backend === 'Online' ? '#22c55e' : '#ef4444' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: systemHealth.backend === 'Online' ? '#22c55e' : '#ef4444' }}></span>
+                {systemHealth.backend}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#4B5563' }}><Database size={14} /> Database</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, color: systemHealth.database === 'Connected' ? '#22c55e' : '#ef4444' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: systemHealth.database === 'Connected' ? '#22c55e' : '#ef4444' }}></span>
+                {systemHealth.database}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#4B5563' }}><Bot size={14} /> Gemini API</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, color: systemHealth.gemini === 'Available' ? '#22c55e' : systemHealth.gemini === 'Rate-limited' ? '#eab308' : '#ef4444' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: systemHealth.gemini === 'Available' ? '#22c55e' : systemHealth.gemini === 'Rate-limited' ? '#eab308' : '#ef4444' }}></span>
+                {systemHealth.gemini}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -205,7 +322,7 @@ function AdminDashboard() {
                 {recentMeetings.length === 0 ? (
                   <tr>
                     <td colSpan="5" style={{ textAlign: 'center', color: '#777777', padding: '24px' }}>
-                      {loading ? 'Loading recent meetings...' : 'No recent meetings found.'}
+                      {loading ? 'Loading recent meetings...' : 'No meetings recorded yet.'}
                     </td>
                   </tr>
                 ) : (
@@ -244,17 +361,26 @@ function AdminDashboard() {
                 {loading ? 'Loading activity...' : 'No recent activity.'}
               </p>
             ) : (
-              recentActivity.map((act, index) => (
-                <div className="admin-activity-item" key={act._id || index}>
-                  <div className="admin-activity-icon">
-                    <Clock size={16} />
+              recentActivity.map((act, index) => {
+                let IconComponent = Clock;
+                let iconColor = '#777777';
+                if (act.type === 'user_signup') { IconComponent = UserPlus; iconColor = '#3b82f6'; }
+                else if (act.type === 'meeting_start') { IconComponent = Video; iconColor = '#10b981'; }
+                else if (act.type === 'meeting_end') { IconComponent = LogOut; iconColor = '#f59e0b'; }
+                else if (act.type === 'user_joined_meeting') { IconComponent = LogIn; iconColor = '#8b5cf6'; }
+
+                return (
+                  <div className="admin-activity-item" key={act._id || index}>
+                    <div className="admin-activity-icon" style={{ color: iconColor }}>
+                      <IconComponent size={16} />
+                    </div>
+                    <div className="admin-activity-content">
+                      <p className="admin-activity-text">{act.description}</p>
+                      <span className="admin-activity-time">{formatTimeAgo(act.timestamp)}</span>
+                    </div>
                   </div>
-                  <div className="admin-activity-content">
-                    <p className="admin-activity-text">{act.description}</p>
-                    <span className="admin-activity-time">{formatTimeAgo(act.timestamp)}</span>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

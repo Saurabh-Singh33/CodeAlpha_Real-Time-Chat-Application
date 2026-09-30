@@ -13,13 +13,21 @@ function AdminSettings() {
     const fetchSettingsData = async () => {
       try {
         setLoading(true);
-        const [statusData, auditData] = await Promise.all([
+        const [statusData, auditData, geminiData] = await Promise.all([
           getAdminSystemStatus(),
-          getAdminAuditLogs()
+          getAdminAuditLogs(),
+          import('./adminApi').then(m => m.getAdminGeminiStatus()).catch(() => ({ status: 'error' }))
         ]);
 
         if (statusData.success) {
-          setSystemStatus(statusData.status);
+          let updatedStatus = { ...statusData.status };
+          if (geminiData && geminiData.status) {
+            if (geminiData.status === 'ok') updatedStatus.gemini = 'Available';
+            else if (geminiData.status === 'quota_exceeded') updatedStatus.gemini = 'Rate-limited';
+            else if (geminiData.status === 'invalid_key') updatedStatus.gemini = 'Error';
+            else updatedStatus.gemini = 'Error';
+          }
+          setSystemStatus(updatedStatus);
         }
         if (auditData.success) {
           setAuditLogs(auditData.auditLogs || []);

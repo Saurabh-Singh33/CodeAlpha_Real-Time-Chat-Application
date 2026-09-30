@@ -156,3 +156,24 @@ export const getAdminAuditLogs = async () => {
   });
   return handleResponse(response);
 };
+
+export const getAdminTodayStats = async () => {
+  const response = await fetch(`${API_BASE}/stats/today`, {
+    headers: getHeaders()
+  });
+  return handleResponse(response);
+};
+
+export const getAdminLiveMeetings = async () => {
+  const response = await fetch(`${API_BASE}/meetings/live`, {
+    headers: getHeaders()
+  });
+  return handleResponse(response);
+};
+
+export const getAdminGeminiStatus = async () => {
+  const response = await fetch(`${API_BASE}/gemini-status`, {
+    headers: getHeaders()
+  });
+  return handleResponse(response);
+};

@@ -23,5 +23,8 @@ router.get('/meetings/:roomId', adminController.getMeetingById);
 router.get('/activity', adminController.getActivity);
 router.get('/system/status', adminController.getSystemStatus);
 router.get('/audit-logs', adminController.getAuditLogs);
+router.get('/stats/today', adminController.getTodayStats);
+router.get('/meetings/live', adminController.getLiveMeetings);
+router.get('/gemini-status', adminController.getGeminiStatus);
 
 module.exports = router;

@@ -1,4 +1,5 @@
 const Meeting = require('../models/Meeting');
+const ActivityLog = require('../models/ActivityLog');
 
 // @desc    Get all meetings for a user
 // @route   GET /api/meetings
@@ -29,6 +30,18 @@ const createMeeting = async (req, res) => {
       team,
       user: req.user._id
     });
+
+    try {
+      await ActivityLog.create({
+        type: 'meeting_start',
+        description: `Meeting "${title}" was scheduled/started by ${req.user.name || 'a user'}`,
+        userId: req.user._id,
+        userEmail: req.user.email,
+        roomId: meeting._id.toString()
+      });
+    } catch (logErr) {
+      console.error('Failed to write activity log:', logErr);
+    }
 
     res.status(201).json(meeting);
   } catch (error) {

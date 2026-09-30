@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Otp = require('../models/Otp');
+const ActivityLog = require('../models/ActivityLog');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
@@ -120,6 +121,17 @@ const verifyOtp = async (req, res) => {
     await user.save();
     await Otp.deleteMany({ email });
     
+    try {
+      await ActivityLog.create({
+        type: 'user_signup',
+        description: `${user.name} created an account`,
+        userId: user._id,
+        userEmail: user.email
+      });
+    } catch (logErr) {
+      console.error('Failed to write activity log:', logErr);
+    }
+
     generateToken(res, user._id);
     res.status(200).json({ success: true, message: 'Email verified successfully', user: { id: user._id, name: user.name, email: user.email } });
   } catch (error) {
@@ -241,6 +253,16 @@ const googleAuth = async (req, res) => {
         provider: 'google',
         isVerified: true
       });
+      try {
+        await ActivityLog.create({
+          type: 'user_signup',
+          description: `${user.name} created an account`,
+          userId: user._id,
+          userEmail: user.email
+        });
+      } catch (logErr) {
+        console.error('Failed to write activity log:', logErr);
+      }
     }
 
     generateToken(res, user._id);

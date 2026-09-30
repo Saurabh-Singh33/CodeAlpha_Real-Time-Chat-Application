@@ -697,6 +697,81 @@ const resetPassword = async (req, res) => {
   }
 };
 
+// Dummy implementation for audit logs to fix ReferenceError
+const getAuditLogs = async (req, res) => {
+  try {
+    res.json({ success: true, logs: [] });
+  } catch (error) {
+    console.error('Get Audit Logs Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch audit logs' });
+  }
+};
+
+const getTodayStats = async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // start of today locally
+    const newUsers = await User.countDocuments({ createdAt: { $gte: today } });
+    const newMeetings = await Meeting.countDocuments({ createdAt: { $gte: today } });
+    const aiSummariesToday = await MeetingAIAnalysis.countDocuments({ createdAt: { $gte: today } });
+    const totalAiSummaries = await MeetingAIAnalysis.countDocuments();
+    
+    res.json({
+      success: true,
+      newUsersToday: newUsers,
+      meetingsToday: newMeetings,
+      aiSummariesToday: aiSummariesToday,
+      totalAiSummaries: totalAiSummaries
+    });
+  } catch (error) {
+    console.error('Error fetching today stats:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch today stats' });
+  }
+};
+
+const getLiveMeetings = async (req, res) => {
+  try {
+    const activeRooms = req.app.get('activeRooms') || {};
+    const liveRoomIds = Object.keys(activeRooms).filter(roomId => Object.keys(activeRooms[roomId] || {}).length > 0);
+    
+    // We fetch meeting info for those rooms. They might not all be in DB if created anonymously or recently,
+    // but typically they match roomId or _id.
+    const liveMeetings = await Meeting.find({ _id: { $in: liveRoomIds.filter(id => mongoose.isValidObjectId(id)) } })
+      .populate('user', 'name email');
+      
+    res.json({ success: true, liveMeetings, liveRoomIds });
+  } catch (error) {
+    console.error('Error fetching live meetings:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch live meetings' });
+  }
+};
+
+const getGeminiStatus = async (req, res) => {
+  try {
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (!geminiKey || geminiKey === 'your_gemini_api_key_here') {
+      return res.json({ status: 'invalid_key', message: 'Gemini API key not configured' });
+    }
+    
+    const { GoogleGenerativeAI } = require('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(geminiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    
+    const result = await model.generateContent('ping');
+    const response = await result.response;
+    if (response) {
+      return res.json({ status: 'ok', model: 'gemini-1.5-flash' });
+    }
+    return res.json({ status: 'error', message: 'No response from Gemini' });
+  } catch (error) {
+    console.error('Gemini API status check error:', error);
+    if (error.status === 429) {
+      return res.json({ status: 'quota_exceeded' });
+    }
+    return res.json({ status: 'error', message: error.message });
+  }
+};
+
 module.exports = {
   login,
   forgotPassword,
@@ -710,6 +785,9 @@ module.exports = {
   getMeetingById,
   getActivity,
   getSystemStatus,
-  getAuditLogs
+  getAuditLogs,
+  getTodayStats,
+  getLiveMeetings,
+  getGeminiStatus
 };
 

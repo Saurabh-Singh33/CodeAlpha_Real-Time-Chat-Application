@@ -521,27 +521,17 @@ const getActivity = async (req, res) => {
 // GET /api/admin/system/status
 const getSystemStatus = async (req, res) => {
   try {
-    // 1. Backend status: Online
     const backendStatus = 'Online';
-
-    // 2. Database status: Mongoose connection check
     const dbState = mongoose.connection.readyState;
-    // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
     const dbStatus = dbState === 1 ? 'Connected' : 'Disconnected';
-
-    // 3. Socket.IO status
     const getActiveSocketsCount = req.app.get('getActiveSocketsCount');
     const socketStatus = getActiveSocketsCount !== undefined ? 'Connected' : 'Disconnected';
 
-    // 4. Gemini API status
+    const provider = process.env.AI_PROVIDER || 'openrouter';
+    const aiKey = provider === 'openrouter' ? process.env.OPENROUTER_API_KEY : process.env.GEMINI_API_KEY;
     let geminiStatus = 'Available';
-    const geminiKey = process.env.GEMINI_API_KEY;
-
-    if (!geminiKey || geminiKey === 'your_gemini_api_key_here') {
+    if (!aiKey || aiKey === 'sk-or-v1-testkey' || aiKey === 'your_gemini_api_key_here') {
       geminiStatus = 'Not Configured';
-    } else {
-      // Basic check
-      geminiStatus = 'Available';
     }
 
     return res.json({
@@ -551,6 +541,8 @@ const getSystemStatus = async (req, res) => {
         database: dbStatus,
         socket: socketStatus,
         gemini: geminiStatus,
+        aiProvider: provider,
+        aiModel: provider === 'openrouter' ? process.env.OPENROUTER_MODEL : process.env.GEMINI_MODEL,
         appName: process.env.APP_NAME || 'VartaConnect',
         environment: process.env.NODE_ENV || 'development',
         retention: {
@@ -729,6 +721,54 @@ const getTodayStats = async (req, res) => {
   }
 };
 
+const getAdminProfile = async (req, res) => {
+  try {
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminName = process.env.ADMIN_NAME || 'Saurabh';
+    res.json({
+      success: true,
+      profile: {
+        email: adminEmail,
+        displayName: adminName
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching admin profile:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch admin profile' });
+  }
+};
+
+const updateAdminProfile = async (req, res) => {
+  try {
+    const { displayName } = req.body;
+    if (displayName) {
+      process.env.ADMIN_NAME = displayName;
+      // Persist to .env
+      const envPath = path.join(__dirname, '../.env');
+      if (fs.existsSync(envPath)) {
+        let envContent = fs.readFileSync(envPath, 'utf8');
+        if (envContent.includes('ADMIN_NAME=')) {
+          envContent = envContent.replace(/ADMIN_NAME=.*/g, `ADMIN_NAME=${displayName}`);
+        } else {
+          envContent += `\nADMIN_NAME=${displayName}\n`;
+        }
+        fs.writeFileSync(envPath, envContent, 'utf8');
+      }
+    }
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      profile: {
+        email: process.env.ADMIN_EMAIL,
+        displayName: process.env.ADMIN_NAME
+      }
+    });
+  } catch (error) {
+    console.error('Error updating admin profile:', error);
+    res.status(500).json({ success: false, message: 'Failed to update admin profile' });
+  }
+};
+
 const getLiveMeetings = async (req, res) => {
   try {
     const activeRooms = req.app.get('activeRooms') || {};
@@ -748,26 +788,23 @@ const getLiveMeetings = async (req, res) => {
 
 const getGeminiStatus = async (req, res) => {
   try {
-    const geminiKey = process.env.GEMINI_API_KEY;
-    if (!geminiKey || geminiKey === 'your_gemini_api_key_here') {
-      return res.json({ status: 'invalid_key', message: 'Gemini API key not configured' });
-    }
+    const provider = process.env.AI_PROVIDER || 'openrouter';
     
-    const { GoogleGenerativeAI } = require('@google/generative-ai');
-    const genAI = new GoogleGenerativeAI(geminiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    
-    const result = await model.generateContent('ping');
-    const response = await result.response;
-    if (response) {
-      return res.json({ status: 'ok', model: 'gemini-1.5-flash' });
+    if (provider === 'openrouter') {
+      const key = process.env.OPENROUTER_API_KEY;
+      if (!key || key === 'sk-or-v1-testkey') {
+        return res.json({ status: 'invalid_key', message: 'OpenRouter API key not configured' });
+      }
+      return res.json({ status: 'ok', model: process.env.OPENROUTER_MODEL });
+    } else {
+      const geminiKey = process.env.GEMINI_API_KEY;
+      if (!geminiKey || geminiKey === 'your_gemini_api_key_here') {
+        return res.json({ status: 'invalid_key', message: 'Gemini API key not configured' });
+      }
+      return res.json({ status: 'ok', model: process.env.GEMINI_MODEL || 'gemini-1.5-flash' });
     }
-    return res.json({ status: 'error', message: 'No response from Gemini' });
   } catch (error) {
-    console.error('Gemini API status check error:', error);
-    if (error.status === 429) {
-      return res.json({ status: 'quota_exceeded' });
-    }
+    console.error('AI API status check error:', error);
     return res.json({ status: 'error', message: error.message });
   }
 };
@@ -788,6 +825,7 @@ module.exports = {
   getAuditLogs,
   getTodayStats,
   getLiveMeetings,
-  getGeminiStatus
+  getGeminiStatus,
+  getAdminProfile,
+  updateAdminProfile
 };
-

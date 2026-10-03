@@ -2,22 +2,14 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 /**
  * AI Meeting Service Abstraction
- * Configured to use Google Gemini API to analyze transcript chunks and synthesize
+ * Configured to use OpenRouter or Google Gemini API to analyze transcript chunks and synthesize
  * structured meeting notes, section summaries, key points, decisions, and action items.
  */
 class AIMeetingService {
   constructor() {
-    this.modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-  }
-
-  getGenAI() {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      const err = new Error('GEMINI_API_KEY is not configured in environment variables');
-      err.statusCode = 500;
-      throw err;
-    }
-    return new GoogleGenerativeAI(apiKey);
+    this.provider = process.env.AI_PROVIDER || 'openrouter';
+    this.geminiModel = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+    this.openRouterModel = process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.3-70b-instruct:free';
   }
 
   /**
@@ -29,7 +21,6 @@ class AIMeetingService {
     const summaryWindowMinutes = parseInt(process.env.AI_SUMMARY_CHUNK_MINUTES || '20', 10);
     const chunkWindowMinutes = parseInt(process.env.TRANSCRIPTION_CHUNK_MINUTES || '5', 10);
     
-    // Number of 5-min chunks per section (e.g. 20 / 5 = 4 chunks per section)
     const chunksPerSection = Math.max(1, Math.floor(summaryWindowMinutes / chunkWindowMinutes));
     
     const sections = [];
@@ -126,17 +117,43 @@ Grouped Sections: ${sections.length}
 ${fullTranscript}`;
 
     try {
-      const genAI = this.getGenAI();
-      const model = genAI.getGenerativeModel({
-        model: this.modelName,
-        generationConfig: {
-          responseMimeType: 'application/json'
-        }
-      });
+      let rawText = '';
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const rawText = response.text().trim();
+      if (this.provider === 'openrouter') {
+        const apiKey = process.env.OPENROUTER_API_KEY;
+        if (!apiKey) throw new Error('OPENROUTER_API_KEY is not configured');
+        
+        // Dynamically import fetch if needed for Node environments
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: this.openRouterModel,
+            messages: [{ role: 'user', content: prompt }]
+          })
+        });
+
+        const data = await response.json();
+        if (data.error) throw new Error(data.error.message);
+        rawText = data.choices[0].message.content.trim();
+
+      } else {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) throw new Error('GEMINI_API_KEY is not configured');
+
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({
+          model: this.geminiModel,
+          generationConfig: { responseMimeType: 'application/json' }
+        });
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        rawText = response.text().trim();
+      }
 
       // Clean markdown code blocks if returned
       const cleanJsonStr = rawText

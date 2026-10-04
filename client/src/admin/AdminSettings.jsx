@@ -131,7 +131,9 @@ function AdminSettings() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#FAFDF5', borderRadius: '12px', border: '1px solid #E4E4E7' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <Sparkles size={16} style={{ color: '#18181B' }} />
-                <span style={{ fontWeight: 600, fontSize: '14px', color: '#18181B' }}>Gemini AI Engine</span>
+                <span style={{ fontWeight: 600, fontSize: '14px', color: '#18181B' }}>
+                  {systemStatus?.aiProvider === 'openrouter' ? 'OpenRouter AI Engine' : 'Gemini AI Engine'}
+                </span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                 {getStatusBadge(systemStatus ? systemStatus.gemini : 'Available')}

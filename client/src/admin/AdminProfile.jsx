@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getAdminProfile, updateAdminProfile, updateAdminPassword } from './adminApi';
-import { User, Shield, CheckCircle2, AlertCircle } from 'lucide-react';
+import { User, Shield, CheckCircle2, AlertCircle, Edit3, Save } from 'lucide-react';
 import './admin.css';
 
 function AdminProfile() {
   const [profile, setProfile] = useState({ email: '', displayName: '' });
   const [displayName, setDisplayName] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const nameInputRef = useRef(null);
   
   const [passwords, setPasswords] = useState({
     currentPassword: '',
@@ -39,8 +41,20 @@ function AdminProfile() {
     }
   };
 
+  const handleEnableEdit = () => {
+    setIsEditing(true);
+    setProfileMessage(null);
+    setProfileError(null);
+    setTimeout(() => {
+      if (nameInputRef.current) {
+        nameInputRef.current.focus();
+      }
+    }, 50);
+  };
+
   const handleProfileSave = async (e) => {
     e.preventDefault();
+    if (!isEditing) return;
     setProfileMessage(null);
     setProfileError(null);
     try {
@@ -48,6 +62,7 @@ function AdminProfile() {
       if (data.success) {
         setProfileMessage('Profile updated successfully.');
         setProfile(data.profile);
+        setIsEditing(false);
         
         // Update session storage so sidebar reflects change
         const storedUser = JSON.parse(sessionStorage.getItem('adminUser') || '{}');
@@ -124,16 +139,48 @@ function AdminProfile() {
             <div className="admin-input-group">
               <label className="admin-label">Display Name</label>
               <input 
+                ref={nameInputRef}
                 type="text" 
                 className="admin-input" 
                 value={displayName} 
                 onChange={e => setDisplayName(e.target.value)}
+                disabled={!isEditing}
+                style={!isEditing ? { backgroundColor: '#F4F4F5', cursor: 'not-allowed' } : {}}
                 required
               />
             </div>
             
-            <div style={{ marginTop: '20px' }}>
-              <button type="submit" className="admin-btn admin-btn-primary">Save Profile</button>
+            <div style={{ marginTop: '20px', display: 'flex', gap: '12px' }}>
+              <button 
+                type="button" 
+                className="admin-btn admin-btn-secondary"
+                onClick={() => {
+                  if (isEditing) {
+                    setDisplayName(profile.displayName);
+                    setIsEditing(false);
+                  } else {
+                    handleEnableEdit();
+                  }
+                }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Edit3 size={16} /> {isEditing ? 'Cancel' : 'Edit'}
+              </button>
+
+              <button 
+                type="submit" 
+                className="admin-btn admin-btn-primary"
+                disabled={!isEditing}
+                style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '6px',
+                  opacity: !isEditing ? 0.5 : 1,
+                  cursor: !isEditing ? 'not-allowed' : 'pointer'
+                }}
+              >
+                <Save size={16} /> Save
+              </button>
             </div>
           </form>
         </div>

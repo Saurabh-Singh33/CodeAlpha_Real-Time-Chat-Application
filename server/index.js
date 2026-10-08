@@ -387,6 +387,35 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+let retries = 0;
+const MAX_RETRIES = 5;
+
+function startServer() {
+  server.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+    retries = 0;
+  });
+}
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    if (retries < MAX_RETRIES) {
+      retries++;
+      console.warn(`⚠️ [Warning] Port ${PORT} is busy, retrying in 1 second... (Attempt ${retries}/${MAX_RETRIES})`);
+      setTimeout(() => {
+        try {
+          server.close();
+        } catch (_) {}
+        startServer();
+      }, 1000);
+    } else {
+      console.error(`\n❌ [Error] Port ${PORT} is already in use by another process after ${MAX_RETRIES} retries.`);
+      console.error(`   To resolve, kill the process using port ${PORT} or update PORT in .env.\n`);
+      process.exit(1);
+    }
+  } else {
+    console.error('Server error:', err);
+  }
 });
+
+startServer();

@@ -98,12 +98,12 @@ export default function Landing() {
       </nav>
 
       {/* Main Content */}
-      <main className="landing-hero" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4rem 6rem', maxWidth: '1400px', margin: '0 auto', position: 'relative' }}>
+      <main className="landing-hero" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.5rem 5rem 2.5rem 5rem', maxWidth: '1400px', margin: '0 auto', position: 'relative' }}>
         
         {/* Soft Light-Blue Radial Gradient Glow */}
         <div style={{
           position: 'absolute',
-          top: '40%',
+          top: '35%',
           left: '30%',
           transform: 'translate(-50%, -50%)',
           width: '900px',
@@ -117,17 +117,17 @@ export default function Landing() {
         <div className="hero-text" style={{ flex: '1', maxWidth: '600px', textAlign: 'left', position: 'relative', zIndex: 1 }}>
           
           {/* New Badge */}
-          <div style={{ display: 'inline-block', background: '#e8f0fe', color: '#1A73E8', padding: '5px 14px', borderRadius: '16px', fontSize: '0.8rem', fontWeight: '700', marginBottom: '1.5rem', letterSpacing: '0.5px' }}>
+          <div style={{ display: 'inline-block', background: '#e8f0fe', color: '#1A73E8', padding: '4px 12px', borderRadius: '16px', fontSize: '0.8rem', fontWeight: '700', marginBottom: '1rem', letterSpacing: '0.5px' }}>
             NEW
           </div>
           
           {/* Headline */}
-          <h1 style={{ fontSize: '3.2rem', lineHeight: '1.15', color: '#202124', fontWeight: '800', marginBottom: '2rem', letterSpacing: '-0.02em', fontFamily: "'Inter', 'Roboto', sans-serif" }}>
+          <h1 style={{ fontSize: '3.1rem', lineHeight: '1.16', color: '#202124', fontWeight: '800', marginBottom: '1.75rem', letterSpacing: '-0.02em', fontFamily: "'Inter', 'Roboto', sans-serif" }}>
             We re-engineered the service we built for secure business meetings, VartaConnect, to make it free and available for all.
           </h1>
           
           {/* Dual CTAs */}
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '3rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', marginBottom: '2.25rem' }}>
             {user ? (
               <Link 
                 to="/dashboard" 
@@ -181,8 +181,8 @@ export default function Landing() {
         </div>
 
         {/* Right Image Module */}
-        <div className="hero-image" style={{ flex: '1', display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
-          <img src="/man_laptop_desk.png" alt="Video Conferencing Illustration" style={{ maxWidth: '110%', height: 'auto', filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.08))' }} />
+        <div className="hero-image" style={{ flex: '1', display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 1, marginTop: '-1.25rem' }}>
+          <img src="/man_laptop_desk.png" alt="Video Conferencing Illustration" style={{ maxWidth: '100%', height: 'auto', filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.08))' }} />
         </div>
       </main>
 
